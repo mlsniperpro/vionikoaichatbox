@@ -72,6 +72,7 @@ const getSimilarDocsFromChunks = async (
   numDocs
 ) => {
   const [query_embedding_obj] = await getEmbeddings([query]);
+  console.log("The query embedding is ", query_embedding_obj)
   const query_embedding = query_embedding_obj.embedding[0].embedding;
   const similarities = getSimilarity(embeddingsWithChunks, query_embedding);
   const chunks = embeddingsWithChunks.map(({ chunk }) => chunk);
