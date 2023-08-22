@@ -81,14 +81,18 @@ async function getBotResponse(input) {
       prompt: input,
       fileName: window.vionikoaiChat && window.vionikoaiChat.fileName ,
     };
-
-    const response = await fetch("http://localhost:3001/fetchOpenAI", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestData),
-    });
+    console.log("The request data is ", requestData)
+    const response = await fetch(
+      "https://vionikochat.onrender.com/fetchOpenAI",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      }
+    );
+    console.log("The response is ", response);
 
     if (!response.ok) {
       throw new Error("Network response was not ok");

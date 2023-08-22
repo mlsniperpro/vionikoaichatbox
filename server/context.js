@@ -1,5 +1,7 @@
-import { getStorage, ref, getDownloadURL } from "firebase/storage";
+import { ref, getDownloadURL } from "firebase/storage";
 import {storage} from "./config/firebase.js"; // Assuming you're exporting firebaseConfig from this file
+import fetch from "node-fetch";
+
 
 // Function to retrieve JSON from Firebase Storage
 async function getJsonFromStorage(userId, fileName) {
