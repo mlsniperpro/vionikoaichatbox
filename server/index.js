@@ -38,23 +38,23 @@ function getCache(key) {
 }
 
 app.post("/fetchOpenAI", async (req, res) => {
-  const json = await req.body;
-  const userId = json.userId;
-  const fileName = json.fileName + ".json";
-
-  // Check if fileContent is in cache
-  const cacheKey = `${userId}-${fileName}`;
-  let fileContent = getCache(cacheKey);
-
-  if (!fileContent) {
-    fileContent = await getJsonFromStorage(userId, fileName);
-    // Cache the result for 5 hours
-    setCache(cacheKey, fileContent, 5 * 60 * 60 * 1000);
-  }
-
-  const context = await contextRetriever(fileContent, json.prompt);
-
   try {
+    const json = await req.body;
+    const userId = json.userId;
+    const fileName = json.fileName + ".json";
+
+    // Check if fileContent is in cache
+    const cacheKey = `${userId}-${fileName}`;
+    let fileContent = getCache(cacheKey);
+
+    if (!fileContent) {
+      fileContent = await getJsonFromStorage(userId, fileName);
+      // Cache the result for 5 hours
+      setCache(cacheKey, fileContent, 5 * 60 * 60 * 1000);
+    }
+
+    const context = await contextRetriever(fileContent, json.prompt);
+
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -76,9 +76,15 @@ app.post("/fetchOpenAI", async (req, res) => {
         ],
       }),
     });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API responded with ${response.status}`);
+    }
+
     const data = await response.json();
     res.json(data);
   } catch (error) {
+    console.error("An error occurred:", error); // Log the error for debugging
     res.status(500).json({ error: "Failed to fetch data from OpenAI" });
   }
 });
