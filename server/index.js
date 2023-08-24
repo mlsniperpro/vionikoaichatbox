@@ -5,8 +5,9 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
-import {getAccessToken} from "./paypal.js";
-
+import { getAccessToken } from "./paypal.js";
+import { db } from "./config/firebase.js";
+import updateUserWordCount from "./wordCountUpdate.js";
 
 dotenv.config();
 
@@ -55,7 +56,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     }
 
     const context = await contextRetriever(fileContent, json.prompt);
-
+    await updateUserWordCount(context, userId);
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -70,8 +71,8 @@ app.post("/fetchOpenAI", async (req, res) => {
             content: `Here is the user question:
           Question: ${json.prompt}
         Search for relevant information in the context below and use it to answer user questions exhaustively and deeply using numbered list and thorough analysis.
-        If the context does not provide relevant answer to the question, mention that PDF provided is not relevant to question and stop answering questions.
-        Context: ${context}
+        If the context does not provide relevant answer to the question, mention that PDF provided is not relevant to question and try to relate the question to the context.
+  Context: ${context}
           `,
           },
         ],
@@ -95,13 +96,10 @@ app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-
-
-
 app.get("/subscriptionDetails", async (req, res) => {
   try {
     const accessToken = await getAccessToken();
-    console.log("The access token is", accessToken)
+    console.log("The access token is", accessToken);
     const subscriptionId = req.headers.subscriptionid;
     console.log("The subscription id is", subscriptionId);
 
