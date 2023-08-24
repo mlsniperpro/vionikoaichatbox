@@ -1,6 +1,3 @@
-
-
-import { get } from "http";
 import fetch from "node-fetch";
 async function getAccessToken() {
   const response = await fetch("https://api.paypal.com/v1/oauth2/token", {
@@ -24,22 +21,4 @@ async function getAccessToken() {
   return data.access_token;
 }
 
-async function run() {
-  
-  const resp = await fetch(
-    `https://api-m.paypal.com/v1/reporting/transactions`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${process.env.PAYPAL_ACCESS_TOKEN}`,
-      },
-    }
-  );
-
-  const data = await resp.text();
-  console.log(data);
-}
-
-run();
-
-export {getAccessToken,run};
+export {getAccessToken};

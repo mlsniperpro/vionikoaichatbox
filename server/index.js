@@ -14,7 +14,6 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-const accessToken = await getAccessToken();
 // Cache setup
 const cache = {};
 
@@ -96,12 +95,13 @@ app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-//console.log("The New access token is " + await getAccessToken())
 
 
 
 app.get("/subscriptionDetails", async (req, res) => {
   try {
+    const accessToken = await getAccessToken();
+    console.log("The access token is", accessToken)
     const subscriptionId = req.headers.subscriptionid;
     console.log("The subscription id is", subscriptionId);
 
@@ -134,22 +134,3 @@ app.get("/subscriptionDetails", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch data from Paypal" });
   }
 });
-
-
-
-async function run() {
-  const resp = await fetch(
-    `https://api-m.paypal.com/v1/billing/subscriptions/I-SXMWDUVYFPNV`,
-    {
-      method: "GET",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
-    console.log(resp)
-  const data = await resp.text();
-  console.log(data);
-}
-
-//run();
