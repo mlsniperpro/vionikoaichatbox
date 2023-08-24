@@ -5,6 +5,8 @@ import fetch from "node-fetch";
 import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
+import {getAccessToken} from "./paypal.js";
+
 
 dotenv.config();
 
@@ -12,7 +14,7 @@ const app = express();
 
 app.use(cors());
 app.use(bodyParser.json());
-
+const accessToken = await getAccessToken();
 // Cache setup
 const cache = {};
 
@@ -89,7 +91,65 @@ app.post("/fetchOpenAI", async (req, res) => {
   }
 });
 
-const PORT = 3001;
+const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+//console.log("The New access token is " + await getAccessToken())
+
+
+
+app.get("/subscriptionDetails", async (req, res) => {
+  try {
+    const subscriptionId = req.headers.subscriptionid;
+    console.log("The subscription id is", subscriptionId);
+
+    const response = await fetch(
+      `https://api-m.paypal.com/v1/billing/subscriptions/${subscriptionId}`,
+      {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+        timeout: 5000, // Set a timeout of 5 seconds
+      }
+    );
+
+    console.log(
+      "Response status:",
+      response.status,
+      "Response status text:",
+      response.statusText
+    );
+
+    if (!response.ok) {
+      throw new Error(`Paypal API responded with ${response.status}`);
+    }
+
+    const data = await response.json();
+    res.json(data); // Send the data back to the client
+  } catch (error) {
+    console.error("An error occurred:", error);
+    res.status(500).json({ error: "Failed to fetch data from Paypal" });
+  }
+});
+
+
+
+async function run() {
+  const resp = await fetch(
+    `https://api-m.paypal.com/v1/billing/subscriptions/I-SXMWDUVYFPNV`,
+    {
+      method: "GET",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }
+  );
+    console.log(resp)
+  const data = await resp.text();
+  console.log(data);
+}
+
+//run();
