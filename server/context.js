@@ -5,7 +5,6 @@ import fetch from "node-fetch";
 
 // Function to retrieve JSON from Firebase Storage
 async function getJsonFromStorage(userId, fileName) {
-  console.log("Fetching JSON from Firebase Storage...");
   const fileRef = ref(storage, `pdfs/${userId}/${fileName}`);
 
   try {

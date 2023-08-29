@@ -4,7 +4,8 @@
     var link1 = document.createElement("link");
     link1.rel = "stylesheet";
     link1.href =
-      "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css";
+    "static/css/chat.css";
+      //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css";
     document.head.appendChild(link1);
 
     var link2 = document.createElement("link");
@@ -18,7 +19,7 @@
   var appendChatHTML = function () {
     var chatHTML = `
         <div class="chat-bar-collapsible">
-            <button id="chat-button" type="button" class="collapsible" aria-label="Open chat">Chat with us!
+            <button id="chat-button" type="button" class="collapsible" aria-label="Open chat">VionikoChat!
                 <i class="fa fa-fw fa-comments-o" style="color: #fff;"></i>
             </button>
             <div class="content">
@@ -52,7 +53,8 @@
   var loadChatScript = function () {
     var chatScript = document.createElement("script");
     chatScript.src =
-      "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+      "static/scripts/chat.js";
+      //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
     document.body.appendChild(chatScript);
   };
 

@@ -6,7 +6,6 @@ import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
 import { getAccessToken } from "./paypal.js";
-import { db } from "./config/firebase.js";
 import updateUserWordCount from "./wordCountUpdate.js";
 
 dotenv.config();
@@ -38,7 +37,6 @@ function getCache(key) {
   }
   return null;
 }
-
 app.post("/fetchOpenAI", async (req, res) => {
   try {
     const json = await req.body;
@@ -57,7 +55,7 @@ app.post("/fetchOpenAI", async (req, res) => {
 
     const context = await contextRetriever(fileContent, json.prompt);
     await updateUserWordCount(context, userId);
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
         Authorization: "Bearer " + process.env.OPENAI_API_KEY,
@@ -76,6 +74,7 @@ app.post("/fetchOpenAI", async (req, res) => {
           `,
           },
         ],
+        stream: true,
       }),
     });
 
@@ -83,13 +82,45 @@ app.post("/fetchOpenAI", async (req, res) => {
       throw new Error(`OpenAI API responded with ${response.status}`);
     }
 
-    const data = await response.json();
-    res.json(data);
+    let accumulatedContent = "";
+
+    // Stream the data to the client as it's received
+    response.body.on("data", (chunk) => {
+      const chunkText = new TextDecoder().decode(chunk);
+      const match = chunkText.match(/data: (.*?})\s/); // Extract the JSON part
+      if (match && match[1]) {
+        const jsonData = JSON.parse(match[1]);
+        if (
+          jsonData.choices &&
+          jsonData.choices[0] &&
+          jsonData.choices[0].delta &&
+          jsonData.choices[0].delta.content
+        ) {
+          accumulatedContent += jsonData.choices[0].delta.content;
+        }
+      }
+      res.write(chunk);
+    });
+
+
+    response.body.on("end", () => {
+      console.log("Final accumulated content:", accumulatedContent.trim()); // Print the accumulated content
+      updateUserWordCount(accumulatedContent, userId);
+      res.end();
+    });
+
+    response.body.on("error", (err) => {
+      console.error("An error occurred while streaming:", err);
+      res.status(500).end("Failed to fetch data from OpenAI");
+    });
   } catch (error) {
     console.error("An error occurred:", error); // Log the error for debugging
     res.status(500).json({ error: "Failed to fetch data from OpenAI" });
   }
 });
+
+
+
 
 const PORT = 3000;
 app.listen(PORT, () => {
@@ -112,13 +143,6 @@ app.get("/subscriptionDetails", async (req, res) => {
         },
         timeout: 5000, // Set a timeout of 5 seconds
       }
-    );
-
-    console.log(
-      "Response status:",  
-      response.status,
-      "Response status text:",
-      response.statusText
     );
 
     if (!response.ok) {

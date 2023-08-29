@@ -72,7 +72,6 @@ const getSimilarDocsFromChunks = async (
   numDocs
 ) => {
   const [query_embedding_obj] = await getEmbeddings([query]);
-  console.log("The query embedding is ", query_embedding_obj)
   const query_embedding = query_embedding_obj.embedding[0].embedding;
   const similarities = getSimilarity(embeddingsWithChunks, query_embedding);
   const chunks = embeddingsWithChunks.map(({ chunk }) => chunk);
@@ -82,7 +81,7 @@ const getSimilarDocsFromChunks = async (
 };
 const contextRetriever = async (embeddingData, input) => {
   let texts;
-  const docs = await getSimilarDocsFromChunks(embeddingData, input, 2);
+  const docs = await getSimilarDocsFromChunks(embeddingData, input, 4);
   texts = docs.map((doc) => doc.doc);
   texts = texts.join(" ");
   return texts;

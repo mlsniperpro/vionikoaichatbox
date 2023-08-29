@@ -46,10 +46,8 @@ const firstBotMessage = () => {
 };
 
 const getHardResponse = async (userText) => {
-  const botResponse = await getBotResponse(userText);
-  const botHtml = `<p class="botText"><span>${botResponse}</span></p>`;
-  $("#chatbox").append(botHtml);
-  document.getElementById("chat-bar-bottom").scrollIntoView(true);
+  await getBotResponse(userText);
+  //document.getElementById("chat-bar-bottom").scrollIntoView(true);
 };
 
 const getResponse = () => {
@@ -79,32 +77,81 @@ async function getBotResponse(input) {
     const requestData = {
       userId: window.vionikoaiChat && window.vionikoaiChat.userId,
       prompt: input,
-      fileName: window.vionikoaiChat && window.vionikoaiChat.fileName ,
+      fileName: window.vionikoaiChat && window.vionikoaiChat.fileName,
     };
-    console.log("The request data is ", requestData)
-    const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAI",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestData),
-      }
-    );
-    console.log("The response is ", response);
+
+    const response = await fetch("http://localhost:3000/fetchOpenAI", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestData),
+    });
 
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
 
-    const data = await response.json();
-    console.log("The data is ", data.choices[0]);
-    return data.choices[0].message.content;
+    let accumulatedData = "";
+    let accumulatedContent = "";
+    let currentMessageElement;
+    const reader = response.body.getReader();
+    while (true) {
+      const { done, value } = await reader.read();
+      //if (done) break;
+      const chunkText = new TextDecoder().decode(value);
+      accumulatedData += chunkText;
+      console.log("Accumulated data:", accumulatedData);
+      // Try to extract and parse JSON from accumulated data
+      let jsonData;
+      const match = accumulatedData.match(/data: (.*?})\s/);
+      if (match && match[1]) {
+        try {
+          jsonData = JSON.parse(match[1]);
+          if( jsonData.choices[0].finish_reason === "stop" ){
+            break;
+          }
+        } catch (error) {
+          console.warn("Incomplete data chunk received:", match[1]);
+          continue; // If parsing fails, wait for more data
+        }
+
+        if (
+          jsonData.choices &&
+          jsonData.choices[0] &&
+          jsonData.choices[0].delta &&
+          jsonData.choices[0].delta.content &&
+          jsonData.choices[0].delta.content.trim() !== ""
+        ) {
+          accumulatedContent += jsonData.choices[0].delta.content;
+
+          if (!currentMessageElement) {
+            const botHtml = `<p class="botText"><span>${accumulatedContent}</span></p>`;
+            $("#chatbox").append(botHtml);
+            currentMessageElement = $("#chatbox").children().last();
+          } else {
+            currentMessageElement.find("span").text(accumulatedContent);
+          }
+        } else {
+          console.warn("Unexpected data structure:", jsonData);
+        }
+
+        // Clear the processed data
+        
+        accumulatedData = accumulatedData.replace(match[0], "");
+      }
+    }
+    console.log("Final data:", accumulatedContent);
+    // Here, you can finalize the message if needed
   } catch (error) {
     console.error("Error:", error);
-    return "An error occurred. Please try again later.";
+    const botHtml = `<p class="botText"><span>An error occurred. Please try again later.</span></p>`;
+    $("#chatbox").append(botHtml);
+    document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
 }
+
+
+
 
 firstBotMessage();

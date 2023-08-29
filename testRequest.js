@@ -1,4 +1,4 @@
-const http = require("http");
+/*const http = require("http");
 
 const subscriptionId = "I-SXMWDUVYFPNV"; // Replace with the actual subscriptionId
 
@@ -34,3 +34,47 @@ req.on("error", (error) => {
 });
 
 req.end();
+*/
+// Create a new instance of XMLHttpRequest
+const http = require("http");
+
+const data = {
+  userId: "M8LwxAfm26SimGbDs4LDwf1HuCb2",
+  fileName: "Resume -Tushar Damani",
+  prompt: "Hello",
+};
+
+const options = {
+  hostname: "localhost",
+  port: 3000,
+  path: "/fetchOpenAI",
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json;charset=UTF-8",
+    "Content-Length": Buffer.byteLength(JSON.stringify(data)),
+  },
+};
+
+const req = http.request(options, (res) => {
+  let responseData = "";
+
+  res.on("data", (chunk) => {
+    responseData += chunk;
+  });
+
+  res.on("end", () => {
+    if (res.statusCode >= 200 && res.statusCode < 400) {
+      console.log(responseData);
+    } else {
+      console.error("Server responded with error", res.statusCode);
+    }
+  });
+});
+
+req.on("error", (error) => {
+  console.error("Connection error", error);
+});
+
+req.write(JSON.stringify(data));
+req.end();
+
