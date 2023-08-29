@@ -80,13 +80,16 @@ async function getBotResponse(input) {
       fileName: window.vionikoaiChat && window.vionikoaiChat.fileName,
     };
 
-    const response = await fetch("http://localhost:3000/fetchOpenAI", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(requestData),
-    });
+    const response = await fetch(
+      "https://vionikochat.onrender.com/fetchOpenAI",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(requestData),
+      }
+    );
 
     if (!response.ok) {
       throw new Error("Network response was not ok");
