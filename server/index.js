@@ -115,7 +115,7 @@ app.get("/subscriptionDetails", async (req, res) => {
     );
 
     console.log(
-      "Response status:",
+      "Response status:",  
       response.status,
       "Response status text:",
       response.statusText

@@ -50,7 +50,8 @@
   // Load chat.js after the chatbox HTML has been appended
   var loadChatScript = function () {
     var chatScript = document.createElement("script");
-    chatScript.src = "static/scripts/chat.js";
+    chatScript.src =
+      "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
     document.body.appendChild(chatScript);
   };
 
