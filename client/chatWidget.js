@@ -3,7 +3,8 @@
   var loadStyles = function () {
     var link1 = document.createElement("link");
     link1.rel = "stylesheet";
-    link1.href = "static/css/chat.css";
+    link1.href =
+      "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css";
     document.head.appendChild(link1);
 
     var link2 = document.createElement("link");
