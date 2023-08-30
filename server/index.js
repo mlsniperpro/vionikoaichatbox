@@ -37,6 +37,8 @@ function getCache(key) {
   }
   return null;
 }
+
+
 app.post("/fetchOpenAI", async (req, res) => {
   try {
     const json = await req.body;
@@ -128,8 +130,12 @@ app.listen(PORT, () => {
 });
 
 app.get("/subscriptionDetails", async (req, res) => {
+  console.log("Request received for subscription details");
+  console.log("The request headers are", req.headers)
+  console.log("The request body is", req.body)
   try {
     const accessToken = await getAccessToken();
+    
     console.log("The access token is", accessToken);
     const subscriptionId = req.headers.subscriptionid;
     console.log("The subscription id is", subscriptionId);
