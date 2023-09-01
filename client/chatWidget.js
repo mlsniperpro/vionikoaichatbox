@@ -33,10 +33,6 @@
                                 <div id="userInput">
                                     <input id="textInput" class="input-box" type="text" name="msg" placeholder="Tap 'Enter' to send a message" />
                                 </div>
-                                <div class="chat-bar-icons">
-                                    <i class="fa fa-fw fa-heart" style="color: crimson;" onclick="heartButton()" aria-label="Send a heart"></i>
-                                    <i class="fa fa-fw fa-send" style="color: #333;" onclick="sendButton()" aria-label="Send message"></i>
-                                </div>
                             </div>
                             <div id="chat-bar-bottom"></div>
                         </div>
