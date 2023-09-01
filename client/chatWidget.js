@@ -4,8 +4,7 @@
     var link1 = document.createElement("link");
     link1.rel = "stylesheet";
     link1.href =
-     // "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css";
-     "static/css/chat.css"
+     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css";
     document.head.appendChild(link1);
 
     var link2 = document.createElement("link");
