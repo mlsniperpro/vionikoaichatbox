@@ -1,160 +1,104 @@
 // Utility Functions
-const getTime = () => {
-  const today = new Date();
-  let hours = today.getHours();
-  let minutes = today.getMinutes();
-
-  hours = hours < 10 ? `0${hours}` : hours;
-  minutes = minutes < 10 ? `0${minutes}` : minutes;
-
-  return `${hours}:${minutes}`;
-};
-
+const getTime = () =>
+  `${new Date().getHours().toString().padStart(2, "0")}:${new Date()
+    .getMinutes()
+    .toString()
+    .padStart(2, "0")}`;
 // Event Listeners
-document.addEventListener("click", (event) => {
-  let targetElement = event.target;
-
-  while (targetElement !== null) {
-    if (targetElement.classList.contains("collapsible")) {
+document.addEventListener("click", (e) => {
+  for (let t = e.target; t; t = t.parentElement)
+    if (t.classList.contains("collapsible")) {
       console.log("Chat icon clicked!");
-      targetElement.classList.toggle("active");
-      const content = targetElement.nextElementSibling;
-      content.style.maxHeight = content.style.maxHeight
-        ? null
-        : `${content.scrollHeight}px`;
+      t.classList.toggle("active");
+      const c = t.nextElementSibling;
+      c.style.maxHeight = c.style.maxHeight ? null : `${c.scrollHeight}px`;
       return;
     }
-    targetElement = targetElement.parentElement;
-  }
 });
 
-$("#textInput").keypress((e) => {
-  if (e.which === 13) {
-    getResponse();
-  }
-});
-
-// Bot Interaction Functions
+$("#textInput").keypress((e) => (e.which === 13 ? getResponse() : null));
 const firstBotMessage = () => {
-  const firstMessage = "Say Something...";
-  document.getElementById(
-    "botStarterMessage"
-  ).innerHTML = `<p class="botText"><span>${firstMessage}</span></p>`;
-  const time = getTime();
-  $("#chat-timestamp").append(time);
-  document.getElementById("userInput").scrollIntoView(false);
+  $("#botStarterMessage").html(
+    `<p class="botText"><span>${window.vionikoaiChat.firstMessage || "Say Something..."}</span></p>`
+  );
+  $("#chat-timestamp").append(getTime());
+  $("#userInput")[0].scrollIntoView(false);
 };
-
-const getHardResponse = async (userText) => {
-  await getBotResponse(userText);
-  //document.getElementById("chat-bar-bottom").scrollIntoView(true);
-};
-
-const getResponse = () => {
-  let userText = $("#textInput").val();
-  userText = userText || "I love Code Palace!";
-  const userHtml = `<p class="userText"><span>${userText}</span></p>`;
+const getResponse = async () => {
+  const userText = $("#textInput").val();
+  $("#chatbox").append(`<p class="userText"><span>${userText}</span></p>`);
   $("#textInput").val("");
-  $("#chatbox").append(userHtml);
-  document.getElementById("chat-bar-bottom").scrollIntoView(true);
-  setTimeout(() => {
-    getHardResponse(userText);
-  }, 1000);
+  $("#chat-bar-bottom")[0].scrollIntoView(true);
+  await getBotResponse(userText);
 };
 
 const buttonSendText = (sampleText) => {
-  const userHtml = `<p class="userText"><span>${sampleText}</span></p>`;
   $("#textInput").val("");
-  $("#chatbox").append(userHtml);
-  document.getElementById("chat-bar-bottom").scrollIntoView(true);
+  $("#chatbox").append(`<p class="userText"><span>${sampleText}</span></p>`);
+  $("#chat-bar-bottom")[0].scrollIntoView(true);
 };
-
-const sendButton = () => getResponse();
-const heartButton = () => buttonSendText("Heart clicked!");
-
 async function getBotResponse(input) {
   try {
     const requestData = {
-      userId: window.vionikoaiChat && window.vionikoaiChat.userId,
+      userId: window.vionikoaiChat?.userId,
       prompt: input,
-      fileName: window.vionikoaiChat && window.vionikoaiChat.fileName,
+      fileName: window.vionikoaiChat?.fileName,
     };
 
     const response = await fetch(
       "https://vionikochat.onrender.com/fetchOpenAI",
       {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestData),
       }
     );
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
-    }
+    if (!response.ok) throw new Error("Network response was not ok");
 
-    let accumulatedData = "";
-    let accumulatedContent = "";
-    let currentMessageElement;
+    let [accumulatedData, accumulatedContent, currentMessageElement] = [
+      "",
+      "",
+      null,
+    ];
     const reader = response.body.getReader();
+
     while (true) {
       const { done, value } = await reader.read();
-      //if (done) break;
-      const chunkText = new TextDecoder().decode(value);
-      accumulatedData += chunkText;
-      console.log("Accumulated data:", accumulatedData);
-      // Try to extract and parse JSON from accumulated data
-      let jsonData;
+      accumulatedData += new TextDecoder().decode(value);
       const match = accumulatedData.match(/data: (.*?})\s/);
+
       if (match && match[1]) {
+        let jsonData;
         try {
           jsonData = JSON.parse(match[1]);
-          if( jsonData.choices[0].finish_reason === "stop" ){
-            break;
-          }
+          if (jsonData.choices[0].finish_reason === "stop") break;
         } catch (error) {
-          console.warn("Incomplete data chunk received:", match[1]);
-          continue; // If parsing fails, wait for more data
+          continue;
         }
 
-        if (
-          jsonData.choices &&
-          jsonData.choices[0] &&
-          jsonData.choices[0].delta &&
-          jsonData.choices[0].delta.content &&
-          jsonData.choices[0].delta.content.trim() !== ""
-        ) {
-          accumulatedContent += jsonData.choices[0].delta.content;
+        const { delta } = jsonData.choices[0];
+        if (delta && delta.content?.trim() !== "") {
+          accumulatedContent += delta.content;
 
           if (!currentMessageElement) {
-            const botHtml = `<p class="botText"><span>${accumulatedContent}</span></p>`;
-            $("#chatbox").append(botHtml);
+            $("#chatbox").append(
+              `<p class="botText"><span>${accumulatedContent}</span></p>`
+            );
             currentMessageElement = $("#chatbox").children().last();
           } else {
             currentMessageElement.find("span").text(accumulatedContent);
           }
-        } else {
-          console.warn("Unexpected data structure:", jsonData);
         }
-
-        // Clear the processed data
-        
         accumulatedData = accumulatedData.replace(match[0], "");
       }
     }
-    console.log("Final data:", accumulatedContent);
-    // Here, you can finalize the message if needed
   } catch (error) {
     console.error("Error:", error);
-    const botHtml = `<p class="botText"><span>An error occurred. Please try again later.</span></p>`;
-    $("#chatbox").append(botHtml);
-    document.getElementById("chat-bar-bottom").scrollIntoView(true);
+    $("#chatbox").append(
+      '<p class="botText"><span>An error occurred. Please try again later.</span></p>'
+    );
+    $("#chat-bar-bottom")[0].scrollIntoView(true);
   }
 }
-
-
-
-
 firstBotMessage();
