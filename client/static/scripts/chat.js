@@ -41,11 +41,13 @@ document.addEventListener("click", (e) => {
 });
 
 // Text input event listener
+// Text input event listener
 document.getElementById("textInput").addEventListener("keypress", (e) => {
-  if (e.which === 13) {
+  if (e.key === "Enter") {
     getResponse();
   }
 });
+
 
 // Initialize the chatbox with the first bot message
 const firstBotMessage = () => {
