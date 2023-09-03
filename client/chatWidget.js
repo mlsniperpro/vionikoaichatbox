@@ -1,13 +1,12 @@
 (() => {
   // Load required stylesheets
   const loadStyles = () => {
-    [
-      //"static/css/chat.css",
+    const styles = [
       "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
-      //"static/css/form.css", // New stylesheet for the form
       "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
       "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
-    ].forEach((href) => {
+    ];
+    styles.forEach((href) => {
       const link = document.createElement("link");
       link.rel = "stylesheet";
       link.href = href;
@@ -17,17 +16,20 @@
 
   // Generate form fields based on window.vionikoaiChat properties
   const generateFormFields = () => {
-    let fields = "";
-    if (window.vionikoaiChat?.name) {
-      fields += `<label for="name">Name:</label><input type="text" id="name" name="name" required>`;
-    }
-    if (window.vionikoaiChat?.email) {
-      fields += `<label for="email">Email:</label><input type="email" id="email" name="email" required>`;
-    }
-    if (window.vionikoaiChat?.phone) {
-      fields += `<label for="phone">Phone:</label><input type="tel" id="phone" name="phone" required>`;
-    }
-    return fields;
+    const fields = [];
+    const chatProps = window.vionikoaiChat || {};
+    ["name", "email", "phone"].forEach((field) => {
+      if (chatProps[field]) {
+        fields.push(
+          `<label for="${field}">${
+            field.charAt(0).toUpperCase() + field.slice(1)
+          }:</label><input type="${
+            field === "email" ? "email" : "text"
+          }" id="${field}" name="${field}" required>`
+        );
+      }
+    });
+    return fields.join("");
   };
 
   // Append form HTML to the chat
@@ -50,24 +52,19 @@
   // Show form and attach submit event
   const showForm = () => {
     const form = document.getElementById("user-form");
-    const formOverlay = document.getElementById("form-overlay");
-
-    if (form && formOverlay) {
+    if (form) {
       form.addEventListener("submit", (e) => {
         e.preventDefault();
         validateForm();
       });
-    } else if (formOverlay) {
-      formOverlay.style.display = "none";
     }
   };
 
   // Validate form and hide it if valid
   const validateForm = () => {
-    const name = document.getElementById("name").value;
-    const email = document.getElementById("email").value;
-    const phone = document.getElementById("phone").value;
-
+    const name = document.getElementById("name")?.value;
+    const email = document.getElementById("email")?.value;
+    const phone = document.getElementById("phone")?.value;
     if (name && email && phone) {
       document.getElementById("form-overlay").style.display = "none";
     }
@@ -79,14 +76,12 @@
     showForm();
   };
 
-  // Default chat settings
-  const inputPlaceholder =
-    window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
-  const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-
   // Append chat HTML to the body
   const appendChatHTML = () => {
-    const chatHTML = `
+    const inputPlaceholder =
+      window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
+    const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
+     const chatHTML = `
       <div class="chat-bar-collapsible">
         <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}
           <i class="fa fa-fw fa-comments-o chat-icon"></i>
@@ -116,8 +111,8 @@
   // Load chat script
   const loadChatScript = () => {
     const chatScript = document.createElement("script");
-    chatScript.src = //"static/scripts/chat.js";
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+    chatScript.src =
+      "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
     document.body.appendChild(chatScript);
   };
 
@@ -127,20 +122,21 @@
       "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
       "https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js",
     ];
-
-    scripts.forEach((src, index) => {
+    let loadedScripts = 0;
+    scripts.forEach((src) => {
       const script = document.createElement("script");
       script.src = src;
-      script.onload =
-        index === scripts.length - 1
-          ? () => {
-              loadChatScript();
-              initializeForm(); // Initialize the form
-            }
-          : undefined;
+      script.onload = () => {
+        loadedScripts++;
+        if (loadedScripts === scripts.length) {
+          loadChatScript();
+          initializeForm();
+        }
+      };
       document.head.appendChild(script);
     });
   };
+
   // Initialize chat
   loadStyles();
   appendChatHTML();
