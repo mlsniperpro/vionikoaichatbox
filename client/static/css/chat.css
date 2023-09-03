@@ -2,10 +2,11 @@
 .chat-bar-collapsible {
     position: fixed;
     bottom: 0;
-    right: 50px;
-    box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
+    right: 1rem;
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
-    width: 350px;
+    width: 22rem;
+    z-index: 999999999; /* High z-index */
 }
 
 /* Styling for the collapsible button */
@@ -13,12 +14,12 @@
     background: linear-gradient(to bottom, #007BFF, #0056b3);
     color: white;
     cursor: pointer;
-    padding: 18px;
+    padding: 1rem;
     width: 100%;
     text-align: left;
     outline: none;
-    font-size: 18px;
-    border-radius: 10px 10px 0 0;
+    font-size: 1rem;
+    border-radius: 0.5rem 0.5rem 0 0;
     border: none;
     transition: all 0.3s ease;
 }
@@ -163,28 +164,28 @@
 }
 
 /* Media query for responsiveness */
-@media screen and (max-width: 600px) {
+@media screen and (max-width: 37.5em) { /* 600px */
     .full-chat-block, .chat-bar-collapsible, .collapsible {
         width: 100%;
-        border-radius: 0px;
+        border-radius: 0;
     }
     .collapsible {
-        border: 0px;
-        border-top: 3px solid white;
+        border: 0;
+        border-top: 0.2rem solid white;
     }
     .outer-container {
-        min-height: 300px;
+        min-height: 18rem; /* Reduced height */
     }
     .chat-container {
-        max-height: 300px;
+        max-height: 18rem; /* Reduced height */
     }
     .userText, .botText {
-        font-size: 16px;
+        font-size: 1rem; /* Increased font size */
     }
     .input-box {
-        padding: 16px;
+        padding: 1rem; /* Increased padding */
     }
     .chat-bar-icons {
-        font-size: 28px;
+        font-size: 1.75rem; /* Increased icon size */
     }
 }
