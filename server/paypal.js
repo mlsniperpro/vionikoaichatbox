@@ -1,7 +1,6 @@
 import fetch from "node-fetch";
 
 async function getAccessToken() {
-  console.log("Attempting to get PayPal access token...");
 
   try {
     const response = await fetch("https://api.paypal.com/v1/oauth2/token", {
@@ -17,8 +16,6 @@ async function getAccessToken() {
       body: "grant_type=client_credentials",
     });
 
-    // Log the status for debugging
-    console.log(`PayPal response status: ${response.status}`);
 
     const responseBody = await response.json();
 
@@ -30,8 +27,6 @@ async function getAccessToken() {
         }`
       );
     }
-
-    console.log("Successfully retrieved PayPal access token.");
     return responseBody.access_token;
   } catch (error) {
     console.error("Error while fetching PayPal access token:", error);

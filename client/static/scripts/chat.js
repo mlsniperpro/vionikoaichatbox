@@ -85,11 +85,18 @@ const buttonSendText = (sampleText) => {
 
 // Function to get bot response from an API
 async function getBotResponse(input) {
+  console.log("Window.vionikoaiChat: ", window.vionikoaiChat);
   try {
     const requestData = {
       userId: window.vionikoaiChat?.userId,
       prompt: input,
       fileName: window.vionikoaiChat?.fileName,
+      chatId: window.vionikoaiChat?.chatId,
+      chatName: window.vionikoaiChat?.chatName,
+      name: window.vionikoaiChat?.name,
+      email: window.vionikoaiChat?.email,
+      phone: window.vionikoaiChat?.phone,
+      embedded: true,
     };
 
     const response = await fetch(

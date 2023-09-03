@@ -3,13 +3,6 @@ import { db } from "./config/firebase.js";
 import { doc, getDoc, increment, setDoc, updateDoc } from "firebase/firestore";
 
 const updateUserWordCount = async (data, userId) => {
- /* console.log(
-    "The userId passed in To Update User Word Count Now is: ",
-    userId
-  );
-  */
-  //console.log("updateUserWordCount called");
-  //console.log("The data passed in To Update User Word Count Now is: ", data);
   if (!userId) throw new Error("User not logged in");
 
   const userDocRef = doc(db, "wordsgenerated", userId);
@@ -18,7 +11,6 @@ const updateUserWordCount = async (data, userId) => {
 
   // Data validation and word count calculation
   if (typeof data === "string") {
-    //console.log("The data is a string");
     length = data.split(" ").length;
   } else if (
     data.choices &&
