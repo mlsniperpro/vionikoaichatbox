@@ -35,6 +35,14 @@ document.addEventListener("click", (e) => {
       t.classList.toggle("active");
       const c = t.nextElementSibling;
       c.style.maxHeight = c.style.maxHeight ? null : `${c.scrollHeight}px`;
+
+      // Toggle background color of the body
+      if (c.style.maxHeight) {
+        document.body.style.backgroundColor = "#222";
+      } else {
+        document.body.style.backgroundColor = ""; // Reset to original color
+      }
+
       return;
     }
   }
