@@ -81,7 +81,7 @@
     const inputPlaceholder =
       window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
     const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-     const chatHTML = `
+    const chatHTML = `
       <div class="chat-bar-collapsible">
         <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}
           <i class="fa fa-fw fa-comments-o chat-icon"></i>
@@ -118,10 +118,7 @@
 
   // Load required scripts
   const loadScripts = () => {
-    const scripts = [
-      "https://cdn.jsdelivr.net/npm/marked/marked.min.js",
-      "https://ajax.googleapis.com/ajax/libs/jquery/3.4.1/jquery.min.js",
-    ];
+    const scripts = ["https://cdn.jsdelivr.net/npm/marked/marked.min.js"];
     let loadedScripts = 0;
     scripts.forEach((src) => {
       const script = document.createElement("script");

@@ -1,12 +1,21 @@
 // Utility Functions
-// Function to sanitize HTML
+
+/**
+ * Function to sanitize HTML
+ * @param {string} str - The string to sanitize
+ * @returns {string} - The sanitized HTML string
+ */
 const sanitizeHTML = (str) => {
   const temp = document.createElement("div");
   temp.textContent = str;
   return temp.innerHTML;
 };
 
-// Function to append messages to the chatbox
+/**
+ * Function to append messages to the chatbox
+ * @param {string} message - The message to append
+ * @param {string} type - The type of message (e.g., 'user' or 'bot')
+ */
 const appendMessage = (message, type) => {
   const chatbox = document.getElementById("chatbox");
   const parsedMessage = marked.parse(sanitizeHTML(message));
@@ -17,32 +26,46 @@ const appendMessage = (message, type) => {
   chatbox.insertAdjacentHTML("beforeend", messageHTML);
 };
 
-const getTime = () =>
-  `${new Date().getHours().toString().padStart(2, "0")}:${new Date()
+/**
+ * Function to get the current time in HH:MM format
+ * @returns {string} - The current time in HH:MM format
+ */
+const getTime = () => {
+  return `${new Date().getHours().toString().padStart(2, "0")}:${new Date()
     .getMinutes()
     .toString()
     .padStart(2, "0")}`;
+};
+
 // Event Listeners
+
+// Collapsible event listener
 document.addEventListener("click", (e) => {
-  for (let t = e.target; t; t = t.parentElement)
+  for (let t = e.target; t; t = t.parentElement) {
     if (t.classList.contains("collapsible")) {
-      console.log("Chat icon clicked!");
       t.classList.toggle("active");
       const c = t.nextElementSibling;
       c.style.maxHeight = c.style.maxHeight ? null : `${c.scrollHeight}px`;
       return;
     }
+  }
 });
 
-$("#textInput").keypress((e) => (e.which === 13 ? getResponse() : null));
+// Text input event listener
+document.getElementById("textInput").addEventListener("keypress", (e) => {
+  if (e.which === 13) {
+    getResponse();
+  }
+});
+
+// Initialize the chatbox with the first bot message
 const firstBotMessage = () => {
-  $("#botStarterMessage").html(
-    `<p class="botText"><span>${
+  document.getElementById("botStarterMessage").innerHTML = `
+    <p class="botText"><span>${
       window.vionikoaiChat.firstMessage || "Say Something..."
-    }</span></p>`
-  );
-  $("#chat-timestamp").append(getTime());
-  $("#userInput")[0].scrollIntoView(false);
+    }</span></p>`;
+  document.getElementById("chat-timestamp").append(getTime());
+  document.getElementById("userInput").scrollIntoView(false);
 };
 const getResponse = async () => {
   const userText = $("#textInput").val();
