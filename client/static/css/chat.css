@@ -1,11 +1,11 @@
 /* Base styling for the chat bar */
-/* Base styling for the chat bar */
 .chat-bar-collapsible {
     position: fixed;
     bottom: 0;
     right: 50px;
     box-shadow: 0 8px 16px 0 rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
+    width: 350px;
 }
 
 /* Styling for the collapsible button */
@@ -14,7 +14,7 @@
     color: white;
     cursor: pointer;
     padding: 18px;
-    width: 350px;
+    width: 100%;
     text-align: left;
     outline: none;
     font-size: 18px;
@@ -28,7 +28,7 @@
     max-height: 0;
     overflow: hidden;
     transition: max-height 0.3s ease;
-    background-color: #22222222 /* #f1f1f1;*/
+    background-color: #22222222;
 }
 
 /* Styling for the full chat block */
@@ -163,7 +163,7 @@
 }
 
 /* Media query for responsiveness */
-@media screen and (max-width:600px) {
+@media screen and (max-width: 600px) {
     .full-chat-block, .chat-bar-collapsible, .collapsible {
         width: 100%;
         border-radius: 0px;
@@ -171,5 +171,20 @@
     .collapsible {
         border: 0px;
         border-top: 3px solid white;
+    }
+    .outer-container {
+        min-height: 300px;
+    }
+    .chat-container {
+        max-height: 300px;
+    }
+    .userText, .botText {
+        font-size: 16px;
+    }
+    .input-box {
+        padding: 16px;
+    }
+    .chat-bar-icons {
+        font-size: 28px;
     }
 }
