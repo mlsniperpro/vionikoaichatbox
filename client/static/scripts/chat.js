@@ -1,4 +1,22 @@
 // Utility Functions
+// Function to sanitize HTML
+const sanitizeHTML = (str) => {
+  const temp = document.createElement("div");
+  temp.textContent = str;
+  return temp.innerHTML;
+};
+
+// Function to append messages to the chatbox
+const appendMessage = (message, type) => {
+  const chatbox = document.getElementById("chatbox");
+  const parsedMessage = marked.parse(sanitizeHTML(message));
+  const messageHTML = `
+      <p class="${type}Text">
+        <span>${parsedMessage}</span>
+      </p>`;
+  chatbox.insertAdjacentHTML("beforeend", messageHTML);
+};
+
 const getTime = () =>
   `${new Date().getHours().toString().padStart(2, "0")}:${new Date()
     .getMinutes()
@@ -19,7 +37,9 @@ document.addEventListener("click", (e) => {
 $("#textInput").keypress((e) => (e.which === 13 ? getResponse() : null));
 const firstBotMessage = () => {
   $("#botStarterMessage").html(
-    `<p class="botText"><span>${window.vionikoaiChat.firstMessage || "Say Something..."}</span></p>`
+    `<p class="botText"><span>${
+      window.vionikoaiChat.firstMessage || "Say Something..."
+    }</span></p>`
   );
   $("#chat-timestamp").append(getTime());
   $("#userInput")[0].scrollIntoView(false);
@@ -78,7 +98,7 @@ async function getBotResponse(input) {
         }
 
         const { delta } = jsonData.choices[0];
-        if (delta && delta.content?.trim() !== "") {
+        if (delta && delta.content) {
           accumulatedContent += delta.content;
 
           if (!currentMessageElement) {
@@ -93,6 +113,7 @@ async function getBotResponse(input) {
         accumulatedData = accumulatedData.replace(match[0], "");
       }
     }
+    console.log("accumulatedData", accumulatedContent);
   } catch (error) {
     console.error("Error:", error);
     $("#chatbox").append(
