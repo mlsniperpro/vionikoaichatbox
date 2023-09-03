@@ -4,7 +4,7 @@
     const styles = [
       "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
       "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
-      "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+      //"https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
     ];
     styles.forEach((href) => {
       const link = document.createElement("link");
