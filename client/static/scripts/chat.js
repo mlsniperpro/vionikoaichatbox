@@ -1,24 +1,16 @@
 // Utility Functions
 
-/**
- * Function to sanitize HTML
- * @param {string} str - The string to sanitize
- * @returns {string} - The sanitized HTML string
- */
+// Function to sanitize HTML
 const sanitizeHTML = (str) => {
   const temp = document.createElement("div");
   temp.textContent = str;
   return temp.innerHTML;
 };
 
-/**
- * Function to append messages to the chatbox
- * @param {string} message - The message to append
- * @param {string} type - The type of message (e.g., 'user' or 'bot')
- */
+// Function to append messages to the chatbox
 const appendMessage = (message, type) => {
   const chatbox = document.getElementById("chatbox");
-  const parsedMessage = marked.parse(sanitizeHTML(message));
+  const parsedMessage = sanitizeHTML(message); // Assuming marked.parse is not needed here
   const messageHTML = `
       <p class="${type}Text">
         <span>${parsedMessage}</span>
@@ -26,10 +18,7 @@ const appendMessage = (message, type) => {
   chatbox.insertAdjacentHTML("beforeend", messageHTML);
 };
 
-/**
- * Function to get the current time in HH:MM format
- * @returns {string} - The current time in HH:MM format
- */
+// Function to get the current time in HH:MM format
 const getTime = () => {
   return `${new Date().getHours().toString().padStart(2, "0")}:${new Date()
     .getMinutes()
@@ -67,19 +56,24 @@ const firstBotMessage = () => {
   document.getElementById("chat-timestamp").append(getTime());
   document.getElementById("userInput").scrollIntoView(false);
 };
+
+// Function to get bot response
 const getResponse = async () => {
-  const userText = $("#textInput").val();
-  $("#chatbox").append(`<p class="userText"><span>${userText}</span></p>`);
-  $("#textInput").val("");
-  $("#chat-bar-bottom")[0].scrollIntoView(true);
+  const userText = document.getElementById("textInput").value;
+  appendMessage(userText, "user");
+  document.getElementById("textInput").value = "";
+  document.getElementById("chat-bar-bottom").scrollIntoView(true);
   await getBotResponse(userText);
 };
 
+// Function to send text with a button
 const buttonSendText = (sampleText) => {
-  $("#textInput").val("");
-  $("#chatbox").append(`<p class="userText"><span>${sampleText}</span></p>`);
-  $("#chat-bar-bottom")[0].scrollIntoView(true);
+  document.getElementById("textInput").value = "";
+  appendMessage(sampleText, "user");
+  document.getElementById("chat-bar-bottom").scrollIntoView(true);
 };
+
+// Function to get bot response from an API
 async function getBotResponse(input) {
   try {
     const requestData = {
@@ -99,11 +93,9 @@ async function getBotResponse(input) {
 
     if (!response.ok) throw new Error("Network response was not ok");
 
-    let [accumulatedData, accumulatedContent, currentMessageElement] = [
-      "",
-      "",
-      null,
-    ];
+    let accumulatedData = "";
+    let accumulatedContent = "";
+    let currentMessageElement = null;
     const reader = response.body.getReader();
 
     while (true) {
@@ -125,24 +117,23 @@ async function getBotResponse(input) {
           accumulatedContent += delta.content;
 
           if (!currentMessageElement) {
-            $("#chatbox").append(
-              `<p class="botText"><span>${accumulatedContent}</span></p>`
-            );
-            currentMessageElement = $("#chatbox").children().last();
+            appendMessage(accumulatedContent, "bot");
+            currentMessageElement =
+              document.getElementById("chatbox").lastElementChild;
           } else {
-            currentMessageElement.find("span").text(accumulatedContent);
+            currentMessageElement.querySelector("span").textContent =
+              accumulatedContent;
           }
         }
         accumulatedData = accumulatedData.replace(match[0], "");
       }
     }
-    console.log("accumulatedData", accumulatedContent);
   } catch (error) {
     console.error("Error:", error);
-    $("#chatbox").append(
-      '<p class="botText"><span>An error occurred. Please try again later.</span></p>'
-    );
-    $("#chat-bar-bottom")[0].scrollIntoView(true);
+    appendMessage("An error occurred. Please try again later.", "bot");
+    document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
 }
+
+// Initialize the chat
 firstBotMessage();
