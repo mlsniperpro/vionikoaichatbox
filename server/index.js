@@ -68,11 +68,12 @@ app.post("/fetchOpenAI", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `Here is the user question:
+            content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question.
           Question: ${json.prompt}
-        Search for relevant information in the context below and use it to answer user questions exhaustively and deeply using numbered list and thorough analysis.
-        If the context does not provide relevant answer to the question, mention that PDF provided is not relevant to question and try to relate the question to the context.
-  Context: ${context}
+          Rules:
+          1. Your answer should be in same language as question.
+          2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
+          Context: ${context}
           `,
           },
         ],
