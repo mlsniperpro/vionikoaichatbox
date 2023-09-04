@@ -1,13 +1,11 @@
 /* Base styling for the chat bar */
 .chat-bar-collapsible {
     position: fixed;
-    bottom: 0rem;
-    right: 1rem;
+    bottom: 0;
+    right: 0;
     height: auto;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
     width: auto;
-     z-index: 2000000000; /* Ensuring high visibility */
+    z-index: 2000000000; /* Ensuring high visibility */
 }
 
 /* Styling for the collapsible button */
@@ -35,14 +33,15 @@
 
 /* Styling for the full chat block */
 .full-chat-block {
-    width: 350px;
-    background: white;
-    text-align: center;
-    overflow: auto;
-    scrollbar-width: none;
-    height: max-content;
-    transition: max-height 0.3s ease;
-    /*position: fixed;*/
+    width: 376px;
+    height: calc(100% - 40px);
+    max-width: 696px;
+    min-width: 376px;
+    max-height: 620px;
+    right: 0px;
+    bottom: 0px;
+    position: fixed;
+    
 }
 
 /* Styling for the outer container */
@@ -94,7 +93,7 @@
 
 /* Styling for the user input */
 #userInput {
-    width: 85%;
+    width: 75%;
 }
 
 /* Styling for the input box */
@@ -167,13 +166,12 @@
 
 /* Media query for responsiveness */
 @media (max-width: 451px) {
-    .full-chat-block, .chat-bar-collapsible, .collapsible,.outer-container, .chat-container{
+    .chat-bar-collapsible, .full-chat-block, .outer-container, .chat-container {
         width: 100%;
-        border-radius: 0;
         height: 100%;
-        max-width: 320px;
+        max-width: 100%;
         max-height: 100%;
-
+        min-width: 320px;
     }
     .collapsible {
         border: 0;

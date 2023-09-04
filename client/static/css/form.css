@@ -9,7 +9,7 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 9999; /* Ensure the overlay is on top */
+  z-index: 2000000001; /* Ensure the overlay is on top */
 }
 
 /* Style for the form */
@@ -48,6 +48,15 @@
   border-radius: 4px;
 }
 
-#user-form input[type="submit"]:hover {
-  background-color: #0056b3;
+/* Media query for responsiveness */
+@media (max-width: 768px) {
+  #user-form {
+    width: 90%; /* Increase width for smaller screens */
+  }
+  #user-form input, #user-form label {
+    font-size: 16px; /* Increase font size for better readability */
+  }
+  #user-form input[type="submit"] {
+    padding: 16px 24px; /* Increase padding for better touch area */
+  }
 }

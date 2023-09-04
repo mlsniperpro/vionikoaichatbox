@@ -26,9 +26,7 @@ const getTime = () => {
     .padStart(2, "0")}`;
 };
 
-// Event Listeners
-
-// Collapsible event listener
+ // Collapsible event listener
 document.addEventListener("click", (e) => {
   for (let t = e.target; t; t = t.parentElement) {
     if (t.classList.contains("collapsible")) {
