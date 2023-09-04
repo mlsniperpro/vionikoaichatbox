@@ -43,4 +43,37 @@ const updateUserWordCount = async (data, userId) => {
   }
 };
 
-export default updateUserWordCount;
+//Save chats to firestore collection chat
+async function saveChatToFirestore(userId, chatId, chatName, name, email, phone, fileName, prompt, response) {
+  const chatDocRef = doc(db, "chat", chatId);
+  const chatDocSnapshot = await getDoc(chatDocRef);
+
+  if (chatDocSnapshot.exists()) {
+    await updateDoc(chatDocRef, {
+      userId: userId,
+      chatId: chatId,
+      chatName: chatName,
+      name: name,
+      email: email,
+      phone: phone,
+      fileName: fileName,
+      prompt: prompt,
+      response: response,
+      embedded: true,
+    });
+  } else {
+    await setDoc(chatDocRef, {
+      userId: userId,
+      chatId: chatId,
+      chatName: chatName,
+      name: name,
+      email: email,
+      phone: phone,
+      fileName: fileName,
+      prompt: prompt,
+      response: response,
+    });
+  }
+}
+
+export { updateUserWordCount, saveChatToFirestore };

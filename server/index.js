@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
 import { getAccessToken } from "./paypal.js";
-import updateUserWordCount from "./wordCountUpdate.js";
+import {updateUserWordCount} from "./wordCountUpdate.js";
 
 dotenv.config();
 
@@ -44,7 +44,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     const json = await req.body;
     const userId = json.userId;
     const fileName = json.fileName + ".json";
-
+    console.log("json: ", json)
     // Check if fileContent is in cache
     const cacheKey = `${userId}-${fileName}`;
     let fileContent = getCache(cacheKey);
