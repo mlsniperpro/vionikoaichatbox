@@ -105,8 +105,8 @@ app.post("/fetchOpenAI", async (req, res) => {
     });
 
 
-    response.body.on("end", () => {
-      updateUserWordCount(accumulatedContent, userId);
+    response.body.on("end", async() => {
+      await updateUserWordCount(accumulatedContent, userId);
       saveChatToFirestore(
         userId,
         json.chatId,
@@ -118,7 +118,7 @@ app.post("/fetchOpenAI", async (req, res) => {
         json.prompt,
         "user"
       );
-      saveChatToFirestore(userId, json.chatId, json.chatName, json.name, json.email, json.phone, fileName, accumulatedContent, "assistant");
+      await saveChatToFirestore(userId, json.chatId, json.chatName, json.name, json.email, json.phone, fileName, accumulatedContent, "assistant");
       res.end();
     });
 
