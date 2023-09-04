@@ -2,11 +2,10 @@
 .chat-bar-collapsible {
     position: fixed;
     bottom: 0;
-    right: 1rem;
-    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
-    transition: all 0.3s ease;
-    width: 22rem;
-    z-index: 999999999; /* High z-index */
+    right: 0;
+    width: auto;
+    height: auto;
+    z-index: 2000000000; /* Ensuring high visibility */
 }
 
 /* Styling for the collapsible button */
@@ -34,13 +33,14 @@
 
 /* Styling for the full chat block */
 .full-chat-block {
-    width: 350px;
-    background: white;
-    text-align: center;
-    overflow: auto;
-    scrollbar-width: none;
-    height: max-content;
-    transition: max-height 0.3s ease;
+    width: 376px;
+    height: calc(100% - 40px);
+    max-width: 696px;
+    min-width: 376px;
+    max-height: 620px;
+    right: 0px;
+    bottom: 0px;
+    position: fixed;
 }
 
 /* Styling for the outer container */
@@ -61,11 +61,6 @@
     border-radius: 10px;
     box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.5);
     transition: all 0.3s ease;
-}
-
-/* Hide scrollbar for Webkit browsers */
-.chat-container::-webkit-scrollbar {
-    display: none;
 }
 
 /* Styling for the chat bar input block */
@@ -163,29 +158,33 @@
     }
 }
 
+
 /* Media query for responsiveness */
-@media screen and (max-width: 37.5em) { /* 600px */
-    .full-chat-block, .chat-bar-collapsible, .collapsible {
+@media (max-width: 451px) {
+    .chat-bar-collapsible, .full-chat-block, .outer-container, .chat-container {
         width: 100%;
-        border-radius: 0;
+        height: 100%;
+        max-width: 100%;
+        max-height: 100%;
+        min-width: 320px;
     }
     .collapsible {
         border: 0;
         border-top: 0.2rem solid white;
     }
     .outer-container {
-        min-height: 18rem; /* Reduced height */
+        min-height: 18rem;
     }
     .chat-container {
-        max-height: 18rem; /* Reduced height */
+        max-height: 18rem;
     }
     .userText, .botText {
-        font-size: 1rem; /* Increased font size */
+        font-size: 1rem;
     }
     .input-box {
-        padding: 1rem; /* Increased padding */
+        padding: 1rem;
     }
     .chat-bar-icons {
-        font-size: 1.75rem; /* Increased icon size */
+        font-size: 1.75rem;
     }
 }
