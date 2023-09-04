@@ -44,22 +44,13 @@ const updateUserWordCount = async (data, userId) => {
 };
 
 //Save chats to firestore collection chat
-async function saveChatToFirestore(userId, chatId, chatName, name, email, phone, fileName, prompt, response) {
+async function saveChatToFirestore(userId, chatId, chatName, name, email, phone, fileName, response, role) {
   const chatDocRef = doc(db, "chat", chatId);
   const chatDocSnapshot = await getDoc(chatDocRef);
 
   if (chatDocSnapshot.exists()) {
     await updateDoc(chatDocRef, {
-      userId: userId,
-      chatId: chatId,
-      chatName: chatName,
-      name: name,
-      email: email,
-      phone: phone,
-      fileName: fileName,
-      prompt: prompt,
-      response: response,
-      embedded: true,
+      messages: [...chatDocSnapshot.data().messages, { role: role, message: response}]
     });
   } else {
     await setDoc(chatDocRef, {
@@ -70,8 +61,10 @@ async function saveChatToFirestore(userId, chatId, chatName, name, email, phone,
       email: email,
       phone: phone,
       fileName: fileName,
-      prompt: prompt,
-      response: response,
+      embedded: true,
+      time: new Date(),
+      createdAt: Date.now(),
+      messages: [{ role: role, message: response }],
     });
   }
 }

@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
 import { getAccessToken } from "./paypal.js";
-import {updateUserWordCount} from "./wordCountUpdate.js";
+import {updateUserWordCount, saveChatToFirestore} from "./wordCountUpdate.js";
 
 dotenv.config();
 
@@ -107,6 +107,18 @@ app.post("/fetchOpenAI", async (req, res) => {
 
     response.body.on("end", () => {
       updateUserWordCount(accumulatedContent, userId);
+      saveChatToFirestore(
+        userId,
+        json.chatId,
+        json.chatName,
+        json.name,
+        json.email,
+        json.phone,
+        fileName,
+        json.prompt,
+        "user"
+      );
+      saveChatToFirestore(userId, json.chatId, json.chatName, json.name, json.email, json.phone, fileName, accumulatedContent, "assistant");
       res.end();
     });
 
