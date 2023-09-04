@@ -68,7 +68,7 @@ app.post("/fetchOpenAI", async (req, res) => {
         messages: [
           {
             role: "system",
-            content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question.
+            content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
           Question: ${json.prompt}
           Rules:
           1. Your answer should be in same language as question.
