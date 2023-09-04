@@ -50,7 +50,7 @@ async function saveChatToFirestore(userId, chatId, chatName, name, email, phone,
 
   if (chatDocSnapshot.exists()) {
     await updateDoc(chatDocRef, {
-      messages: [...chatDocSnapshot.data().messages, { role: role, message: response}]
+      messages: [...chatDocSnapshot.data().messages, { role: role, content: response}]
     });
   } else {
     await setDoc(chatDocRef, {
@@ -65,7 +65,7 @@ async function saveChatToFirestore(userId, chatId, chatName, name, email, phone,
       embedded: true,
       time: new Date(),
       createdAt: Date.now(),
-      messages: [{ role: role, message: response }],
+      messages: [{ role: role, content: response }],
     });
   }
 }

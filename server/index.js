@@ -107,7 +107,7 @@ app.post("/fetchOpenAI", async (req, res) => {
 
     response.body.on("end", async() => {
       await updateUserWordCount(accumulatedContent, userId);
-      saveChatToFirestore(
+      await saveChatToFirestore(
         userId,
         json.chatId,
         json.chatName,
