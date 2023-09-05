@@ -173,28 +173,36 @@
 }
 
 /* Media query for responsiveness */
-@media screen and (max-width: 37.5em) {
-    .full-chat-block, .chat-bar-collapsible, .collapsible {
-        width: 100%;
-        border-radius: 0;
-    }
-    .collapsible {
-        border: 0;
-        border-top: 0.2rem solid white;
-    }
-    .outer-container {
-        min-height: 18rem;
-    }
-    .chat-container {
-        max-height: 18rem;
-    }
-    .userText, .botText {
-        font-size: 1rem;
-    }
-    .input-box {
-        padding: 1rem;
-    }
-    .chat-bar-icons {
-        font-size: 1.75rem;
-    }
+@media screen and (max-width: 768px) {
+  /* Full-screen chat window */
+  /* Reset to original settings */
+  .chat-bar-collapsible {
+    width: 100%;
+    bottom: 1rem;
+    position: fixed;
+    right: 0;
+    bottom: 1 rem;
+    border-radius: 0.5rem 0.5rem 0 0;
+  }
+
+  /* Hide overflow to prevent scrolling */
+  body {
+    overflow: hidden;
+  }
+
+  /* Reset padding and margin */
+  .full-chat-block, .outer-container, .chat-container {
+    padding: 0;
+    margin: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Adjusting other elements for full screen */
+  .outer-container {
+    min-height: 90vh;
+  }
+  .chat-container {
+    max-height: 100vh;
+  }
 }
