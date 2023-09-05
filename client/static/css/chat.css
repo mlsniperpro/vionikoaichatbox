@@ -4,7 +4,7 @@
     opacity: 1;
     outline-offset: -5px;
     bottom: 1rem;
-    right: 1rem;
+    right: 0;
     box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.2);
     transition: all 0.3s ease;
     width: 22rem;
