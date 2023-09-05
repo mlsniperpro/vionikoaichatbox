@@ -68,7 +68,7 @@ const getResponse = async () => {
 // Function to send text with a button
 const buttonSendText = (sampleText) => {
   document.getElementById("textInput").value = "";
-  appendMessage(sampleText, "user");
+  //appendMessage(sampleText, "user");
   document.getElementById("chat-bar-bottom").scrollIntoView(true);
 };
 

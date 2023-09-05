@@ -1,7 +1,6 @@
 // Load required stylesheets
 const loadStyles = () => {
   const styles = [
-    
     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
   ];
@@ -93,7 +92,7 @@ const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const chatHTML = `<div class="chat-bar-collapsible"><button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button><div class="content chat-content"><div class="full-chat-block"><div class="outer-container"><div class="chat-container"><div id="chatbox" class="chatbox"><h5 id="chat-timestamp" class="chat-timestamp"></h5><p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p></div><div class="chat-bar-input-block"><div id="userInput" class="user-input"><input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" /></div></div></div></div></div></div>`;
+  const chatHTML = `<div class="chat-bar-collapsible"><button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button><div class="content chat-content"><div class="full-chat-block"><div class="outer-container"><div class="chat-container"><div id="chatbox" class="chatbox"><h5 id="chat-timestamp" class="chat-timestamp"></h5><p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p></div><div class="chat-bar-input-block"><div id="userInput" class="user-input"><input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" /></div></div><div id="chat-bar-bottom"></div></div></div></div></div>`;
   document.body.insertAdjacentHTML("beforeend", chatHTML);
 };
 
