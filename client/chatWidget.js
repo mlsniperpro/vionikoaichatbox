@@ -1,10 +1,10 @@
 // Load required stylesheets
 const loadStyles = () => {
   const styles = [
-    //"static/css/chat.css",
-    //"static/css/form.css",
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
+    "static/css/chat.css",
+    "static/css/form.css",
+    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
+    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
   ];
   styles.forEach((href) => {
     const link = document.createElement("link");
@@ -103,8 +103,8 @@ const appendChatHTML = () => {
 const loadChatScript = () => {
   const chatScript = document.createElement("script");
   chatScript.src =
-  
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+  "static/scripts/chat.js";
+    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
   document.body.appendChild(chatScript);
 };
 
