@@ -18,6 +18,7 @@
     cursor: pointer;
     padding: 1rem;
     inset: 0;
+    margin :10px;
     width: 100%;
     text-align: left;
     outline: none;
