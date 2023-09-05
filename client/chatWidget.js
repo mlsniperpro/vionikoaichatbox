@@ -1,10 +1,8 @@
 // Load required stylesheets
 const loadStyles = () => {
   const styles = [
-    "static/css/chat.css",
-    "static/css/form.css",
-    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
-    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
   ];
   styles.forEach((href) => {
     const link = document.createElement("link");
@@ -80,7 +78,6 @@ const validateForm = () => {
       phone,
     };
     document.getElementById("form-overlay").style.display = "none";
-    // Save the chatId, name, email, and phone to a document (this part depends on how you're storing documents)
   }
 };
 
@@ -95,16 +92,15 @@ const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const chatHTML = `<div class="chat-bar-collapsible" style="z-index: 999999999 !important;"><button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button><div class="content chat-content"><div class="full-chat-block"><div class="outer-container"><div class="chat-container"><div id="chatbox" class="chatbox"><h5 id="chat-timestamp" class="chat-timestamp"></h5><p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p></div><div class="chat-bar-input-block"><div id="userInput" class="user-input"><input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" /></div></div><div id="chat-bar-bottom" class="chat-bar-bottom"></div></div></div></div></div></div>`;
+  const chatHTML = `<div class="chat-bar-collapsible"><button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button><div class="content chat-content"><div class="full-chat-block"><div class="outer-container"><div class="chat-container"><div id="chatbox" class="chatbox"><h5 id="chat-timestamp" class="chat-timestamp"></h5><p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p></div><div class="chat-bar-input-block"><div id="userInput" class="user-input"><input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" /></div></div></div></div></div></div>`;
   document.body.insertAdjacentHTML("beforeend", chatHTML);
 };
 
 // Load chat script
 const loadChatScript = () => {
   const chatScript = document.createElement("script");
-  chatScript.src =
-  "static/scripts/chat.js";
-    //"https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+  chatScript.src = "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+  chatScript.async = true; // Make it non-blocking
   document.body.appendChild(chatScript);
 };
 
@@ -115,6 +111,7 @@ const loadScripts = () => {
   scripts.forEach((src) => {
     const script = document.createElement("script");
     script.src = src;
+    script.async = true; // Make it non-blocking
     script.onload = () => {
       loadedScripts++;
       if (loadedScripts === scripts.length) {
