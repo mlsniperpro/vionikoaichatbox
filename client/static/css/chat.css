@@ -200,9 +200,9 @@
 
   /* Adjusting other elements for full screen */
   .outer-container {
-    min-height: 90vh;
+    min-height: 80vh;
   }
   .chat-container {
-    max-height: 100vh;
+    max-height: 90vh;
   }
 }
