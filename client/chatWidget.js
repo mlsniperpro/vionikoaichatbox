@@ -101,6 +101,7 @@ const appendChatHTML = () => {
 const loadChatScript = () => {
   const chatScript = document.createElement("script");
   chatScript.src =
+  
     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
   document.body.appendChild(chatScript);
 };

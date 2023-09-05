@@ -1,6 +1,6 @@
 /* Base styling for the chat bar */
 .chat-bar-collapsible {
-    position: absolute;
+    position: fixed;
     opacity: 1;
     outline-offset: -5px;
     bottom: 1rem;
@@ -96,7 +96,7 @@
 
 /* Styling for the user input */
 #userInput {
-    width: 75%;
+    width: 95%;
 }
 
 /* Styling for the input box */
