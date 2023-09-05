@@ -6,6 +6,7 @@
     height: auto;
     width: auto;
     z-index: 2000000000; /* Ensuring high visibility */
+    right: 1 rem;
 }
 
 /* Styling for the collapsible button */
