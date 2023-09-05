@@ -186,9 +186,10 @@
   }
 
   /* Hide overflow to prevent scrolling */
-  body {
+ /* body {
     overflow: hidden;
   }
+  */
 
   /* Reset padding and margin */
   .full-chat-block, .outer-container, .chat-container {
