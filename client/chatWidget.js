@@ -20,12 +20,12 @@ function loadIframe(){
   <head>
     <meta charset="utf-8">
     <title>Chatbot in JavaScript | CodingNepal</title>
-    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <!-- Google Fonts Link For Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-    <script src="static/scripts/script.js" defer></script>
+    <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
     <button class="chatbot-toggler">
@@ -66,14 +66,14 @@ function initWidget(){
 }
 function initCSSWidget(){
   document.head.appendChild(
-    Object.assign(document.createElement('link'), {
-      id : "iframeCss",
-      rel : 'stylesheet',
-      type: 'text/css',
-      href : "static/css/iframe.css",
-      media: 'all'
+    Object.assign(document.createElement("link"), {
+      id: "iframeCss",
+      rel: "stylesheet",
+      type: "text/css",
+      href: "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css",
+      media: "all",
     })
-  )
+  );
 }
 ready(function(){
   initWidget();
