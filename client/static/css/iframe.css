@@ -1,0 +1,21 @@
+#container {
+    position: fixed;
+    right : 0;
+    bottom: 0;
+    height : auto;
+    width: auto;
+    z-index: 200000000000000000;
+}
+
+#vionikodiv {
+    width: 376px;
+    height: calc(100% - 40px);
+    max-width: 696px;
+    min-width: 376px;
+    max-height: 620px;
+    right: 0;
+    bottom: 0;
+    display: block;
+    position: fixed;
+}
+
