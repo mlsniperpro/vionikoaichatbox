@@ -1,88 +1,126 @@
-function ready(calllbackFunction) {
-  document.readyState !== "loading"
-    ? calllbackFunction()
-    : document.addEventListener("DOMContentLoaded", calllbackFunction);
-}
-
-function loadIframe() {
-  let containerDiv = document.createElement("div");
-  containerDiv.setAttribute("id", "container");
-  containerDiv.classList.add("closed");
-  document.body.appendChild(containerDiv);
-  const iDiv = document.createElement("div");
-  iDiv.setAttribute("id", "vionikodiv");
-  containerDiv.appendChild(iDiv);
-  const iframe = document.createElement("iframe");
-  iframe.setAttribute("frameborder", "0");
-  iframe.setAttribute("border", "0");
-  iframe.setAttribute("title", "Vionikaio Chat");
-  const srcTitle = `
-  <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>Chatbot in JavaScript | CodingNepal</title>
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts Link For Icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-    <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
-  </head>
-  <body>
-    <button class="chatbot-toggler">
-      <span class="material-symbols-rounded">mode_comment</span>
-      <span class="material-symbols-outlined">close</span>
-    </button>
-    <div class="chatbot">
-      <header>
-        <h2>${window.vionikoaiChat?.chatName}</h2>
-        <span class="close-btn material-symbols-outlined">close</span>
-      </header>
-      <ul class="chatbox">
-        <li class="chat incoming">
-          <p>How can I help you today?</p>
-        </li>
-      </ul>
-      <div class="chat-input">
-        <textarea placeholder="${
-          window.vionikoaiChat?.inputPlaceholder ||
-          "Tap Enter to send a message"
-        }" spellcheck="false" required></textarea>
-        <span id="send-btn" class="material-symbols-rounded">send</span>
-      </div>
-    </div>
-
-  </body>
-</html>
-  `;
-
-  iDiv.appendChild(iframe);
-
-  iframe.srcdoc = srcTitle;
-
-  iframe.style.width = "100%";
-  iframe.style.height = "100%";
-}
-
-function initWidget() {
-  initCSSWidget();
-  loadIframe();
-}
-function initCSSWidget() {
-  document.head.appendChild(
-    Object.assign(document.createElement("link"), {
-      id: "iframeCss",
-      rel: "stylesheet",
-      type: "text/css",
-      href: "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css",
-      media: "all",
-    })
-  );
-}
-ready(function () {
-  initWidget();
-  console.log(document.getElementById("container"));
-  document.getElementById("container").addEventListener("click", function () {
-    console.log("click");
+// Load required stylesheets
+const loadStyles = () => {
+  const styles = [
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
+  ];
+  styles.forEach((href) => {
+    const link = document.createElement("link");
+    link.rel = "stylesheet";
+    link.href = href;
+    document.head.appendChild(link);
   });
-});
+};
+
+// Generate a random ID of 17 characters
+const generateRandomId = () => {
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  return Array.from(
+    { length: 17 },
+    () => characters[Math.floor(Math.random() * characters.length)]
+  ).join("");
+};
+
+// Generate form fields based on window.vionikoaiChat properties
+const generateFormFields = () => {
+  const chatProps = window.vionikoaiChat || {};
+  return ["name", "email", "phone"]
+    .map((field) =>
+      chatProps[field]
+        ? `<label for="${field}">${
+            field.charAt(0).toUpperCase() + field.slice(1)
+          }:</label><input type="${
+            field === "email" ? "email" : "text"
+          }" id="${field}" name="${field}" required>`
+        : ""
+    )
+    .join("");
+};
+
+// Append form HTML to the chat
+const appendFormHTML = () => {
+  const formFields = generateFormFields();
+  if (formFields) {
+    const formHTML = `<div id="form-overlay" class="form-overlay" style="z-index: 9999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>`;
+    document
+      .querySelector(".outer-container")
+      .insertAdjacentHTML("beforeend", formHTML);
+  }
+};
+
+// Show form and attach submit event
+const showForm = () => {
+  const form = document.getElementById("user-form");
+  if (form) {
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      validateForm();
+    });
+  }
+};
+
+// Validate form and hide it if valid
+const validateForm = () => {
+  const name = document.getElementById("name")?.value;
+  const email = document.getElementById("email")?.value;
+  const phone = document.getElementById("phone")?.value;
+  if (name && email && phone) {
+    window.vionikoaiChat = {
+      ...window.vionikoaiChat,
+      chatId: generateRandomId(),
+      name,
+      email,
+      phone,
+    };
+    document.getElementById("form-overlay").style.display = "none";
+  }
+};
+
+// Initialize form
+const initializeForm = () => {
+  appendFormHTML();
+  showForm();
+};
+
+// Append chat HTML to the body
+const appendChatHTML = () => {
+  const inputPlaceholder =
+    window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
+  const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
+  const chatHTML = `<div class="chat-bar-collapsible" style="z-index: 2000000001;"><button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button><div class="content chat-content"><div class="full-chat-block"><div class="outer-container"><div class="chat-container"><div id="chatbox" class="chatbox"><h5 id="chat-timestamp" class="chat-timestamp"></h5><p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p></div><div class="chat-bar-input-block"><div id="userInput" class="user-input"><input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" /></div></div><div id="chat-bar-bottom"></div></div></div></div></div>`;
+  document.body.insertAdjacentHTML("beforeend", chatHTML);
+};
+
+// Load chat script
+const loadChatScript = () => {
+  const chatScript = document.createElement("script");
+  chatScript.src =
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
+  chatScript.async = true;
+  document.body.appendChild(chatScript);
+};
+
+// Load required scripts
+const loadScripts = () => {
+  const scripts = ["https://cdn.jsdelivr.net/npm/marked/marked.min.js"];
+  Promise.all(
+    scripts.map((src) => {
+      return new Promise((resolve) => {
+        const script = document.createElement("script");
+        script.src = src;
+        script.async = true;
+        script.onload = resolve;
+        document.head.appendChild(script);
+      });
+    })
+  ).then(() => {
+    loadChatScript();
+    initializeForm();
+  });
+};
+
+// Initialize chat
+loadStyles();
+appendChatHTML();
+loadScripts();
