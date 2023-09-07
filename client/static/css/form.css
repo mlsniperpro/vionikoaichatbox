@@ -1,12 +1,12 @@
 /* Style for the form overlay */
 .form-overlay {
-  position: absolute;
+  position: relative; /* I change from absolute to relative when I had Iframe issues */
   top: 30px;
   left: 0;
   width: 100%;
   bottom: 30px;
   height: 100%;
-  background-color: rgba(0, 0, 0, 0.8);
+ /* background-color: rgba(0, 0, 0, 0.8);*/
   display: flex;
   justify-content: center;
   align-items: center;
@@ -54,7 +54,8 @@
   #user-form {
     width: 90%; /* Increase width for smaller screens */
   }
-  #user-form input, #user-form label {
+  #user-form input,
+  #user-form label {
     font-size: 16px; /* Increase font size for better readability */
   }
   #user-form input[type="submit"] {
