@@ -1,8 +1,10 @@
-function ready(calllbackFunction){
-  document.readyState !== 'loading' ? calllbackFunction() : document.addEventListener('DOMContentLoaded', calllbackFunction)
+function ready(calllbackFunction) {
+  document.readyState !== "loading"
+    ? calllbackFunction()
+    : document.addEventListener("DOMContentLoaded", calllbackFunction);
 }
 
-function loadIframe(){
+function loadIframe() {
   let containerDiv = document.createElement("div");
   containerDiv.setAttribute("id", "container");
   containerDiv.classList.add("closed");
@@ -14,7 +16,6 @@ function loadIframe(){
   iframe.setAttribute("frameborder", "0");
   iframe.setAttribute("border", "0");
   iframe.setAttribute("title", "Vionikaio Chat");
-
   const srcTitle = `
   <html lang="en" dir="ltr">
   <head>
@@ -34,7 +35,7 @@ function loadIframe(){
     </button>
     <div class="chatbot">
       <header>
-        <h2>Chatbot</h2>
+        <h2>${window.vionikoaiChat?.chatName}</h2>
         <span class="close-btn material-symbols-outlined">close</span>
       </header>
       <ul class="chatbox">
@@ -43,7 +44,10 @@ function loadIframe(){
         </li>
       </ul>
       <div class="chat-input">
-        <textarea placeholder="Enter a message..." spellcheck="false" required></textarea>
+        <textarea placeholder="${
+          window.vionikoaiChat?.inputPlaceholder ||
+          "Tap Enter to send a message"
+        }" spellcheck="false" required></textarea>
         <span id="send-btn" class="material-symbols-rounded">send</span>
       </div>
     </div>
@@ -60,11 +64,11 @@ function loadIframe(){
   iframe.style.height = "100%";
 }
 
-function initWidget(){
+function initWidget() {
   initCSSWidget();
   loadIframe();
 }
-function initCSSWidget(){
+function initCSSWidget() {
   document.head.appendChild(
     Object.assign(document.createElement("link"), {
       id: "iframeCss",
@@ -75,11 +79,10 @@ function initCSSWidget(){
     })
   );
 }
-ready(function(){
+ready(function () {
   initWidget();
   console.log(document.getElementById("container"));
-  document.getElementById("container")
-  .addEventListener("click", function(){
-    console.log("click")
-  })
+  document.getElementById("container").addEventListener("click", function () {
+    console.log("click");
+  });
 });

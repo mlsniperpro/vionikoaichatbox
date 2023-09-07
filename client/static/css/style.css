@@ -181,7 +181,7 @@ header h2 {
     width: 100%;
   }
   .chatbot .chatbox {
-    height: 90%;
+    height: 100%;
     padding: 25px 15px 100px;
   }
   .chatbot .chat-input {

@@ -11,8 +11,8 @@
     width: 376px;
     height: calc(100% - 40px);
     max-width: 696px;
-    min-width: 376px;
-    max-height: 620px;
+    min-width: 360px;
+    max-height: 696px;
     right: 0;
     bottom: 0;
     display: block;
