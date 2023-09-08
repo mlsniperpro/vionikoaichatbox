@@ -178,33 +178,34 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
       throw new Error(`OpenAI API responded with ${response.status}`);
     }
     response = await response.json();
-
-   
-      await updateUserWordCount(response.choices[0].message.content.trim(), userId);
-      await saveChatToFirestore(
-        userId,
-        json.chatId,
-        json.chatName,
-        json.name,
-        json.email,
-        json.phone,
-        fileName,
-        json.prompt,
-        "user"
-      );
-      await saveChatToFirestore(
-        userId,
-        json.chatId,
-        json.chatName,
-        json.name,
-        json.email,
-        json.phone,
-        fileName,
-        response.choices[0].message.content.trim(),
-        "assistant"
-      );
-
     res.json(response); // Send the data back to the client
+
+    await updateUserWordCount(
+      response.choices[0].message.content.trim(),
+      userId
+    );
+    await saveChatToFirestore(
+      userId,
+      json.chatId,
+      json.chatName,
+      json.name,
+      json.email,
+      json.phone,
+      fileName,
+      json.prompt,
+      "user"
+    );
+    await saveChatToFirestore(
+      userId,
+      json.chatId,
+      json.chatName,
+      json.name,
+      json.email,
+      json.phone,
+      fileName,
+      response.choices[0].message.content.trim(),
+      "assistant"
+    );
   } catch (error) {
     console.error("An error occurred:", error); // Log the error for debugging
     res.status(500).json({ error: "Failed to fetch data from OpenAI" });
