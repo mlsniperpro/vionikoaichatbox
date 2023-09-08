@@ -107,6 +107,7 @@ app.post("/fetchOpenAI", async (req, res) => {
 
 
     response.body.on("end", async() => {
+      console.log(console.log("The streaming ended"))
       await updateUserWordCount(accumulatedContent, userId);
       await saveChatToFirestore(
         userId,
@@ -132,6 +133,83 @@ app.post("/fetchOpenAI", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch data from OpenAI" });
   }
 });
+app.post("/fetchOpenAINoStream", async (req, res) => {
+  try {
+    const json = await req.body;
+    const userId = json.userId;
+    const fileName = json.fileName + ".json";
+    console.log("json: ", json);
+    // Check if fileContent is in cache
+    const cacheKey = `${userId}-${fileName}`;
+    let fileContent = getCache(cacheKey);
+
+    if (!fileContent) {
+      fileContent = await getJsonFromStorage(userId, fileName);
+      // Cache the result for 5 hours
+      setCache(cacheKey, fileContent, 5 * 60 * 60 * 1000);
+    }
+
+    const context = await contextRetriever(fileContent, json.prompt);
+    await updateUserWordCount(context, userId);
+    let response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + process.env.OPENAI_API_KEY,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo-16k",
+        messages: [
+          {
+            role: "system",
+            content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
+          Question: ${json.prompt}
+          Rules:
+          1. Your answer should be in same language as question.
+          2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
+          Context: ${context}
+          `,
+          },
+        ],
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API responded with ${response.status}`);
+    }
+    response = await response.json();
+
+   
+      await updateUserWordCount(response.choices[0].message.content.trim(), userId);
+      await saveChatToFirestore(
+        userId,
+        json.chatId,
+        json.chatName,
+        json.name,
+        json.email,
+        json.phone,
+        fileName,
+        json.prompt,
+        "user"
+      );
+      await saveChatToFirestore(
+        userId,
+        json.chatId,
+        json.chatName,
+        json.name,
+        json.email,
+        json.phone,
+        fileName,
+        response.choices[0].message.content.trim(),
+        "assistant"
+      );
+
+    res.json(response); // Send the data back to the client
+  } catch (error) {
+    console.error("An error occurred:", error); // Log the error for debugging
+    res.status(500).json({ error: "Failed to fetch data from OpenAI" });
+  }
+});
 
 
 
@@ -140,7 +218,7 @@ const PORT = 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-
+``
 app.get("/subscriptionDetails", async (req, res) => {
   try {
     const accessToken = await getAccessToken();
