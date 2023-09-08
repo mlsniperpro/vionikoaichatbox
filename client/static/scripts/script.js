@@ -12,53 +12,51 @@ const createChatLi = (message, className) => {
 };
 
 // Function to generate response
-// Function to generate response
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
+
+  // Prepare request data
   const requestData = {
-    // Populate your requestData here
+    userId: window.parent.vionikoaiChat?.userId,
+    prompt: userMessage,
+    fileName: window.parent.vionikoaiChat?.fileName,
+    chatId: window.parent.vionikoaiChat?.chatId,
+    chatName: window.parent.vionikoaiChat?.chatName,
+    name: window.parent.vionikoaiChat?.name,
+    email: window.parent.vionikoaiChat?.email,
+    phone: window.parent.vionikoaiChat?.phone,
+    embedded: true,
   };
-  const response = await fetch("https://vionikochat.onrender.com/fetchOpenAI", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestData),
-  });
 
-  if (!response.ok) throw new Error("Network response was not ok");
+  try {
+    // Make the fetch request
+    const response = await fetch(
+      "https://vionikochat.onrender.com/fetchOpenAINoStream",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      }
+    );
 
-  let accumulatedData = "";
-  const reader = response.body.getReader();
-  let iterations = 0;
-  const maxIterations = 1000; // Set a maximum number of iterations as a safeguard
-
-  while (true) {
-    if (iterations >= maxIterations) {
-      console.warn("Maximum iterations reached, breaking out of loop.");
-      break;
+    // Check if the response is ok
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
     }
 
-    const { done, value } = await reader.read();
-    accumulatedData += new TextDecoder().decode(value);
-    const match = accumulatedData.match(/data: (.*?})\s/);
+    // Parse the JSON response
+    const responseData = await response.json();
+    console.log("the response data is", responseData)
+    const responseMessage = responseData.choices[0].message.content.trim();
 
-    if (match && match[1]) {
-      let jsonData;
-      try {
-        jsonData = JSON.parse(match[1]);
-        if (jsonData.choices[0].finish_reason === "stop") break;
-      } catch (error) {
-        continue;
-      }
-
-      const { delta } = jsonData.choices[0];
-      if (delta && delta.content) {
-        messageElement.textContent += delta.content;
-      }
-    }
-
-    iterations++;
+    // Update the message element
+    messageElement.textContent = responseMessage;
+  } catch (error) {
+    console.error("An error occurred:", error);
+    messageElement.textContent = "An error occurred. Please try again.";
   }
 };
+
 
 
 // Function to handle chat
