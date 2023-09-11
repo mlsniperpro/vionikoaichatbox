@@ -1,5 +1,16 @@
-// Function to create a chat <li> element with passed message and className
-// Function to create a chat <li> element with passed message and className
+// ## Initialization
+const chatbotToggler = document.querySelector(".chatbot-toggler");
+const closeBtn = document.querySelector(".close-btn");
+const chatbox = document.querySelector(".chatbox");
+const chatInput = document.querySelector(".chat-input textarea");
+const sendChatBtn = document.querySelector(".chat-input span");
+const inputInitHeight = chatInput.scrollHeight;
+const scrollPadding = document.createElement("div");
+// Add a padding element to the chatbox
+scrollPadding.style.height = "50px"; // Adjust this value based on your input box height
+chatbox.appendChild(scrollPadding);
+// ## Create Chat Element
+// Function to create a new chat element
 const createChatLi = (message, className) => {
   const chatLi = document.createElement("li");
   chatLi.classList.add("chat", className);
@@ -9,11 +20,10 @@ const createChatLi = (message, className) => {
   return chatLi;
 };
 
-// Function to generate response
+// ## Generate Response
+// Function to generate a chat response from the server
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
-
-  // Prepare request data
   const requestData = {
     userId: window.parent.vionikoaiChat?.userId,
     prompt: userMessage,
@@ -51,29 +61,25 @@ const generateResponse = async (chatElement, userMessage) => {
   }
 };
 
-// Function to handle chat
+// ## Handle Chat
+// Function to handle chat interactions
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
   chatInput.value = "";
   chatInput.style.height = `${inputInitHeight}px`;
   chatbox.appendChild(createChatLi(userMessage, "outgoing"));
-  chatbox.scrollTo(0, chatbox.scrollHeight);
+  chatbox.scrollTop = chatbox.scrollHeight;
   const incomingChatLi = createChatLi("", "incoming");
   incomingChatLi.classList.add("loader");
   chatbox.appendChild(incomingChatLi);
-  chatbox.scrollTo(0, chatbox.scrollHeight);
+  chatbox.scrollTop = chatbox.scrollHeight;
   await generateResponse(incomingChatLi, userMessage);
 };
 
+// ## Event Listeners
+// Attach event listeners to DOM elements
 document.addEventListener("DOMContentLoaded", () => {
-  const chatbotToggler = document.querySelector(".chatbot-toggler");
-  const closeBtn = document.querySelector(".close-btn");
-  const chatbox = document.querySelector(".chatbox");
-  const chatInput = document.querySelector(".chat-input textarea");
-  const sendChatBtn = document.querySelector(".chat-input span");
-  const inputInitHeight = chatInput.scrollHeight;
-
   chatInput.addEventListener("input", () => {
     chatInput.style.height = `${inputInitHeight}px`;
     chatInput.style.height = `${chatInput.scrollHeight}px`;
