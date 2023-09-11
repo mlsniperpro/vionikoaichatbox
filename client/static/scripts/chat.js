@@ -1,5 +1,3 @@
-// Utility Functions
-
 // Function to sanitize HTML
 const sanitizeHTML = (str) => {
   const temp = document.createElement("div");
@@ -74,7 +72,9 @@ const buttonSendText = (sampleText) => {
 
 // Function to get bot response from an API
 async function getBotResponse(input) {
-  console.log("Window.vionikoaiChat: ", window.vionikoaiChat);
+  appendMessage('', "bot");
+  const currentMessageElement = document.getElementById("chatbox").lastElementChild;
+  currentMessageElement.classList.add("loader");
   try {
     const requestData = {
       userId: window.vionikoaiChat?.userId,
@@ -101,9 +101,8 @@ async function getBotResponse(input) {
 
     let accumulatedData = "";
     let accumulatedContent = "";
-    let currentMessageElement = null;
     const reader = response.body.getReader();
-
+    currentMessageElement.classList.remove("loader");
     while (true) {
       const { done, value } = await reader.read();
       accumulatedData += new TextDecoder().decode(value);

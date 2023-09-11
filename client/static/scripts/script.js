@@ -1,11 +1,9 @@
 // Function to create a chat <li> element with passed message and className
+// Function to create a chat <li> element with passed message and className
 const createChatLi = (message, className) => {
   const chatLi = document.createElement("li");
   chatLi.classList.add("chat", className);
-  const chatContent =
-    className === "outgoing"
-      ? "<p></p>"
-      : '<span class="material-symbols-outlined">smart_toy</span><p></p>';
+  const chatContent = className === "outgoing" ? "<p></p>" : "<p></p>";
   chatLi.innerHTML = chatContent;
   chatLi.querySelector("p").textContent = message;
   return chatLi;
@@ -29,7 +27,6 @@ const generateResponse = async (chatElement, userMessage) => {
   };
 
   try {
-    // Make the fetch request
     const response = await fetch(
       "https://vionikochat.onrender.com/fetchOpenAINoStream",
       {
@@ -39,25 +36,20 @@ const generateResponse = async (chatElement, userMessage) => {
       }
     );
 
-    // Check if the response is ok
     if (!response.ok) {
       throw new Error("Network response was not ok");
     }
 
-    // Parse the JSON response
     const responseData = await response.json();
-    console.log("the response data is", responseData)
     const responseMessage = responseData.choices[0].message.content.trim();
-
-    // Update the message element
     messageElement.textContent = responseMessage;
   } catch (error) {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
+  } finally {
+    chatElement.classList.remove("loader");
   }
 };
-
-
 
 // Function to handle chat
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
@@ -67,7 +59,8 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
   chatInput.style.height = `${inputInitHeight}px`;
   chatbox.appendChild(createChatLi(userMessage, "outgoing"));
   chatbox.scrollTo(0, chatbox.scrollHeight);
-  const incomingChatLi = createChatLi("Thinking...", "incoming");
+  const incomingChatLi = createChatLi("", "incoming");
+  incomingChatLi.classList.add("loader");
   chatbox.appendChild(incomingChatLi);
   chatbox.scrollTo(0, chatbox.scrollHeight);
   await generateResponse(incomingChatLi, userMessage);
