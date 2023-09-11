@@ -52,11 +52,14 @@ const appendFormHTML = () => {
 // Show form and attach submit event
 const showForm = () => {
   const form = document.getElementById("user-form");
+  const chatInput = document.getElementById("textInput");
   if (form) {
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       validateForm();
     });
+    chatInput.classList.add("disabled");
+    chatInput.setAttribute("disabled", "disabled"); // Actually disable the input
   }
 };
 
@@ -65,6 +68,7 @@ const validateForm = () => {
   const name = document.getElementById("name")?.value;
   const email = document.getElementById("email")?.value;
   const phone = document.getElementById("phone")?.value;
+  const chatInput = document.getElementById("textInput");
   if (name && email && phone) {
     window.vionikoaiChat = {
       ...window.vionikoaiChat,
@@ -74,6 +78,8 @@ const validateForm = () => {
       phone,
     };
     document.getElementById("form-overlay").style.display = "none";
+    chatInput.classList.remove("disabled");
+    chatInput.removeAttribute("disabled"); // Enable the input again
   }
 };
 
