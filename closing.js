@@ -50,6 +50,16 @@ const validateForm = (iframe) => {
     chatbot.style.display = "block";
   }
 };
+
+// Function to close the form or chat
+const closeFormOrChat = (iframe, elementId) => {
+  const doc = iframe.contentWindow.document;
+  const element = doc.getElementById(elementId);
+  if (element) {
+    element.style.display = "none";
+  }
+};
+
 // Load iframe with form and chat
 function loadIframe() {
   let containerDiv = document.createElement("div");
@@ -73,22 +83,18 @@ function loadIframe() {
     <meta charset="utf-8">
     <title>Chatbot in JavaScript | CodingNepal</title>
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",">
+    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts Link For Icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-    <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
     <button class="chatbot-toggler">
       <span class="material-symbols-rounded">mode_comment</span>
       <span class="material-symbols-outlined">close</span>
     </button>
-    <div class="chatbot">
+    <div class="chatbot" id="chatbot">
       <header>
         <h2>${window.vionikoaiChat?.chatName}</h2>
-        <span class="close-btn material-symbols-outlined">close</span>
+        <button id="close-chat-btn" class="close-btn">Close</button>
       </header>
       <ul class="chatbox">
         <li class="chat incoming">
@@ -103,7 +109,10 @@ function loadIframe() {
         <span id="send-btn" class="material-symbols-rounded">send</span>
       </div>
     </div>
-    <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>
+    <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
+      <button id="close-form-btn" class="close-btn">Close</button>
+      <form id="user-form">${formFields}<input type="submit" value="Submit"></form>
+    </div>
   </body>
 </html>
   `;
@@ -113,13 +122,15 @@ function loadIframe() {
   iframe.style.width = "100%";
   iframe.style.height = "100%";
 
-  // Attach form submit event
+  // Attach form submit and close events
   iframe.onload = () => {
     const doc = iframe.contentWindow.document;
     const form = doc.getElementById("user-form");
     const chatbotToggler = doc.querySelector(".chatbot-toggler");
     const formOverlay = doc.getElementById("form-overlay");
     const chatbot = doc.querySelector(".chatbot");
+    const closeFormBtn = doc.getElementById("close-form-btn");
+    const closeChatBtn = doc.getElementById("close-chat-btn");
 
     if (form) {
       form.addEventListener("submit", (e) => {
@@ -130,14 +141,20 @@ function loadIframe() {
 
     if (chatbotToggler) {
       chatbotToggler.addEventListener("click", () => {
-        console.log(formOverlay.style.display==="block")
-        if (formOverlay.style.display==="block") {
-          formOverlay.style.display = "none";
-          chatbot.style.display = "none";
-        } else {
-          formOverlay.style.display = "block";
-          chatbot.style.display = "none";
-        }
+        formOverlay.style.display = "block";
+        chatbot.style.display = "none";
+      });
+    }
+
+    if (closeFormBtn) {
+      closeFormBtn.addEventListener("click", () => {
+        closeFormOrChat(iframe, "form-overlay");
+      });
+    }
+
+    if (closeChatBtn) {
+      closeChatBtn.addEventListener("click", () => {
+        closeFormOrChat(iframe, "chatbot");
       });
     }
   };
