@@ -106,7 +106,7 @@ function loadIframe() {
         <span id="send-btn" class="material-symbols-rounded">send</span>
       </div>
     </div>
-    <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>
+    <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value=${window.vionikoaiChat?.submit || "Submit"}></form></div>
   </body>
 </html>
   `;

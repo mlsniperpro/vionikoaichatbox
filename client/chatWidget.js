@@ -44,7 +44,7 @@ const generateFormFields = () => {
 const appendFormHTML = () => {
   const formFields = generateFormFields();
   if (formFields) {
-    const formHTML = `<div id="form-overlay" class="form-overlay" style="z-index: 9999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>`;
+    const formHTML = `<div id="form-overlay" class="form-overlay" style="z-index: 9999;"><form id="user-form">${formFields}<input type="submit" value=${window.vionikoaiChat?.submit ||"Submit"}></form></div>`;
     document
       .querySelector(".outer-container")
       .insertAdjacentHTML("beforeend", formHTML);
