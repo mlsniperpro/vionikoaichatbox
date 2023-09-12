@@ -95,7 +95,7 @@ function loadIframe() {
       </header>
       <ul class="chatbox">
         <li class="chat incoming">
-          <p>How can I help you today?</p>
+          <p>${window.vionikoaiChat?.firstMessage || "How can I help you today?"}</p>
         </li>
       </ul>
       <div class="chat-input">
