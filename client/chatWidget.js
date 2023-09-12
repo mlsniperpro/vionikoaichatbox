@@ -26,17 +26,19 @@ const generateRandomId = () => {
 const generateFormFields = () => {
   const chatProps = window.vionikoaiChat || {};
   return ["name", "email", "phone"]
-    .map((field) =>
-      chatProps[field]
-        ? `<label for="${field}">${
-            field.charAt(0).toUpperCase() + field.slice(1)
-          }:</label><input type="${
+    .map((field) => {
+      const label = chatProps[field]
+        ? chatProps[field]
+        : field.charAt(0).toUpperCase() + field.slice(1);
+      return chatProps[field]
+        ? `<label for="${field}">${label}:</label><input type="${
             field === "email" ? "email" : "text"
           }" id="${field}" name="${field}" required>`
-        : ""
-    )
+        : "";
+    })
     .join("");
 };
+
 
 // Append form HTML to the chat
 const appendFormHTML = () => {
