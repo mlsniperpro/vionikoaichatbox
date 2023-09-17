@@ -1,3 +1,5 @@
+
+const previousMessages = [];
 // Function to sanitize HTML
 const sanitizeHTML = (str) => {
   const temp = document.createElement("div");
@@ -86,6 +88,7 @@ async function getBotResponse(input) {
       email: window.vionikoaiChat?.email,
       phone: window.vionikoaiChat?.phone,
       embedded: true,
+      previousMessages,
     };
 
     const response = await fetch(
@@ -136,6 +139,17 @@ async function getBotResponse(input) {
   } catch (error) {
     console.error("Error:", error);
     appendMessage("An error occurred. Please try again later.", "bot");
+    document.getElementById("chat-bar-bottom").scrollIntoView(true);
+  } finally {
+    previousMessages.push({
+      "role": "user",
+      "content": input
+    },
+    {
+      "role": "assistant",
+      "content": currentMessageElement.querySelector("span").textContent
+    }
+    )
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
 }

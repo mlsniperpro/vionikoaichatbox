@@ -57,6 +57,22 @@ app.post("/fetchOpenAI", async (req, res) => {
 
     const context = await contextRetriever(fileContent, json.prompt);
     await updateUserWordCount(context, userId);
+    const previousMessages = json.previousMessages;
+    const messagesNow = [
+      {
+        role: "system",
+        content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
+
+        Question: ${json.prompt}
+        Rules:
+        1. Your answer should be in same language as question.
+        2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
+        Context: ${context}
+        `,
+      },
+    ];
+
+    const concatenatedMessages = [...previousMessages, ...messagesNow];
     let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -65,18 +81,7 @@ app.post("/fetchOpenAI", async (req, res) => {
       },
       body: JSON.stringify({
         model: "gpt-3.5-turbo-16k",
-        messages: [
-          {
-            role: "system",
-            content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
-          Question: ${json.prompt}
-          Rules:
-          1. Your answer should be in same language as question.
-          2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
-          Context: ${context}
-          `,
-          },
-        ],
+        messages: concatenatedMessages,
         stream: true,
       }),
     });
@@ -144,6 +149,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
       name,
       email,
       phone,
+      previousMessages,
     } = req.body;
     const fileName = `${rawFileName}.json`;
 
@@ -159,7 +165,19 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
     // Context and OpenAI API Call
     const context = await contextRetriever(fileContent, prompt);
     await updateUserWordCount(context, userId);
-
+    const messageNow = [
+            {
+              role: "system",
+              content: `Search for relevant information in the given context to provide short and direct answer the user's question in same language as their question so that they understand the answer.
+          Question: ${prompt}
+          Rules:
+          1. Your answer should be in same language as question.
+          2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
+          Context: ${context}`, // Your existing content here
+            },
+          ];
+    const concatenatedMessages = [...previousMessages, ...messageNow];
+      
     const openAIResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
       {
@@ -170,17 +188,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
         },
         body: JSON.stringify({
           model: "gpt-3.5-turbo-16k",
-          messages: [
-            {
-              role: "system",
-              content: `Search for relevant information in the given context to provide short and direct answer the user's question in same language as their question so that they understand the answer.
-          Question: ${prompt}
-          Rules:
-          1. Your answer should be in same language as question.
-          2. If context totally unrelated to question, provide an answer indicating that source of information is not relevant to question.
-          Context: ${context}`, // Your existing content here
-            },
-          ],
+          messages: concatenatedMessages,
         }),
       }
     );

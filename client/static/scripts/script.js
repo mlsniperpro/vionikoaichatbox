@@ -1,5 +1,6 @@
 // ## Initialization
 const chatbotToggler = document.querySelector(".chatbot-toggler");
+const previousMessages = [];
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
@@ -34,6 +35,7 @@ const generateResponse = async (chatElement, userMessage) => {
     email: window.parent.vionikoaiChat?.email,
     phone: window.parent.vionikoaiChat?.phone,
     embedded: true,
+    previousMessages,
   };
 
   try {
@@ -57,6 +59,14 @@ const generateResponse = async (chatElement, userMessage) => {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
   } finally {
+    previousMessages.push({
+      role: "user",
+      content: userMessage,
+    });
+    previousMessages.push({
+      role: "assistant",
+      content: messageElement.textContent,
+    });
     chatElement.classList.remove("loader");
   }
 };
