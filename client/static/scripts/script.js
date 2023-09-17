@@ -1,6 +1,11 @@
 // ## Initialization
 const chatbotToggler = document.querySelector(".chatbot-toggler");
-const previousMessages = [];
+const previousMessages = [
+  {
+    role: "system",
+    content: window.parent.vionikoaiChat?.systemPrompt,
+  },
+];
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
@@ -36,6 +41,7 @@ const generateResponse = async (chatElement, userMessage) => {
     phone: window.parent.vionikoaiChat?.phone,
     embedded: true,
     previousMessages,
+    temperature: window.parent.vionikoaiChat?.temperature,
   };
 
   try {

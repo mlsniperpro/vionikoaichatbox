@@ -82,6 +82,7 @@ app.post("/fetchOpenAI", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-3.5-turbo-16k",
         messages: concatenatedMessages,
+        temperature: json.temperature,
         stream: true,
       }),
     });
@@ -150,6 +151,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
       email,
       phone,
       previousMessages,
+      temperature,
     } = req.body;
     const fileName = `${rawFileName}.json`;
 
@@ -189,6 +191,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-3.5-turbo-16k",
           messages: concatenatedMessages,
+          'temperature': temperature,
         }),
       }
     );

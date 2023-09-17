@@ -1,5 +1,10 @@
 
-const previousMessages = [];
+const previousMessages = [
+  {
+    role: "system",
+    content: window.vionikoaiChat?.systemPrompt,
+  },
+];
 // Function to sanitize HTML
 const sanitizeHTML = (str) => {
   const temp = document.createElement("div");
@@ -89,6 +94,7 @@ async function getBotResponse(input) {
       phone: window.vionikoaiChat?.phone,
       embedded: true,
       previousMessages,
+      temperature: window.vionikoaiChat?.temperature,
     };
 
     const response = await fetch(
