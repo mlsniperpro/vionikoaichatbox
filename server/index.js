@@ -191,7 +191,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-3.5-turbo-16k",
           messages: concatenatedMessages,
-          'temperature': temperature,
+          temperature: temperature,
         }),
       }
     );

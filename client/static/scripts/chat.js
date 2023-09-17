@@ -2,7 +2,7 @@
 const previousMessages = [
   {
     role: "system",
-    content: window.vionikoaiChat?.systemPrompt,
+    content: window.vionikoaiChat?.systemPrompt || '',
   },
 ];
 // Function to sanitize HTML
@@ -98,7 +98,8 @@ async function getBotResponse(input) {
     };
 
     const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAI",
+      //"https://vionikochat.onrender.com/fetchOpenAI",
+      "http://localhost:3000/fetchOpenAI",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
