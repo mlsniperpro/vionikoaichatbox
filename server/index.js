@@ -179,6 +179,8 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
             },
           ];
     const concatenatedMessages = [...previousMessages, ...messageNow];
+    console.log("concatenatedMessages: ", concatenatedMessages)
+    console.log("temperature: ", temperature)
       
     const openAIResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
@@ -191,12 +193,13 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
         body: JSON.stringify({
           model: "gpt-3.5-turbo-16k",
           messages: concatenatedMessages,
-          temperature: temperature,
+          temperature:  Number(temperature) || 0.7,
         }),
       }
     );
 
     if (!openAIResponse.ok) {
+      //console.log("openAIResponse: ", openAIResponse)
       throw new Error(`OpenAI API responded with ${openAIResponse.status}`);
     }
 

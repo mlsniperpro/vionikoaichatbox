@@ -3,7 +3,7 @@ const chatbotToggler = document.querySelector(".chatbot-toggler");
 const previousMessages = [
   {
     role: "system",
-    content: window.parent.vionikoaiChat?.systemPrompt || "",
+    content: window.parent.vionikoaiChat?.systemPrompt || '',
   },
 ];
 const closeBtn = document.querySelector(".close-btn");
@@ -46,7 +46,8 @@ const generateResponse = async (chatElement, userMessage) => {
 
   try {
     const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAINoStream",
+      //"https://vionikochat.onrender.com/fetchOpenAINoStream",
+      "http://localhost:3000/fetchOpenAINoStream",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
