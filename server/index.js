@@ -7,13 +7,19 @@ import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
 import { getAccessToken } from "./paypal.js";
 import {updateUserWordCount, saveChatToFirestore} from "./wordCountUpdate.js";
+import { OpenAI } from "openai";
+
+
+
 
 dotenv.config();
-
+// Initialize OpenAI instance
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const app = express();
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json()); // Important: Use JSON middleware
+//app.use(bodyParser.json());
 // Cache setup
 const cache = {};
 
@@ -37,6 +43,37 @@ function getCache(key) {
   }
   return null;
 }
+
+app.post('/openChat', async (req, res) => {
+  const json = await req;
+  console.log("The request is ", json)
+
+  // Make API Request to OpenAI
+  try {
+    const response = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      stream: true,
+      messages: messages,
+      max_tokens: 500,
+      temperature: 0.7,
+      top_p: 1,
+      frequency_penalty: 1,
+      presence_penalty: 1,
+    });
+
+    // Convert the response into a friendly text-stream
+    // Assuming OpenAIStream is a function you have that converts the response to a stream
+    const stream = OpenAIStream(response);
+
+    // Respond with the stream
+    // Assuming StreamingTextResponse is a function you have that handles streaming the text
+    res.status(200).send(stream);
+  } catch (error) {
+    res.status(500).send(`Error: ${error.message}`);
+  }
+});
+
+
 
 
 app.post("/fetchOpenAI", async (req, res) => {
