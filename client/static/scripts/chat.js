@@ -98,7 +98,8 @@ async function getBotResponse(input) {
     };
 
     const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAI",
+      "http://localhost:3000/fetchOpenAI",
+      //"https://vionikochat.onrender.com/fetchOpenAI",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

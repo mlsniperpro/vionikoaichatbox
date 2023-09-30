@@ -73,6 +73,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     ];
 
     const concatenatedMessages = [...previousMessages, ...messagesNow];
+    console.log("concatenatedMessages are the  ones sent: ", concatenatedMessages);
     let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -179,8 +180,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
             },
           ];
     const concatenatedMessages = [...previousMessages, ...messageNow];
-    console.log("concatenatedMessages: ", concatenatedMessages)
-    console.log("temperature: ", temperature)
+    console.log("concatenatedMessages are the ones sent: ", concatenatedMessages)
       
     const openAIResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
