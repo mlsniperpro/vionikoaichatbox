@@ -60,7 +60,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     const previousMessages = json.previousMessages;
     const messagesNow = [
       {
-        role: "system",
+        role: "user",
         content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
 
         Question: ${json.prompt}
@@ -170,7 +170,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
     await updateUserWordCount(context, userId);
     const messageNow = [
             {
-              role: "system",
+              role: "user",
               content: `Search for relevant information in the given context to provide short and direct answer the user's question in same language as their question so that they understand the answer.
           Question: ${prompt}
           Rules:
