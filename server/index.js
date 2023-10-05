@@ -120,12 +120,13 @@ app.post("/fetchOpenAI", async (req, res) => {
       body: JSON.stringify({
         model: "gpt-3.5-turbo-16k",
         messages: concatenatedMessages,
-        temperature: json.temperature,
+        temperature: Number(json.temperature) || 0.7,
         stream: true,
       }),
     });
 
     if (!response.ok) {
+      console.log("response: ", response)
       throw new Error(`OpenAI API responded with ${response.status}`);
     }
 

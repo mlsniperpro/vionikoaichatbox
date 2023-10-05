@@ -94,15 +94,15 @@ async function getBotResponse(input) {
       phone: window.vionikoaiChat?.phone,
       embedded: true,
       previousMessages,
-      temperature: window.vionikoaiChat?.temperature,
+      temperature: Number(window.vionikoaiChat?.temperature),
     };
 
     const response = await fetch(
       "https://vionikochat.onrender.com/fetchOpenAI",
       {
         method: "POST",
-        'mode': 'no-cors', // no-cors, *cors, same-origin
         headers: { "Content-Type": "application/json" },
+        
         body: JSON.stringify(requestData),
       }
     );
@@ -160,6 +160,7 @@ async function getBotResponse(input) {
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
 }
+
 
 // Initialize the chat
 firstBotMessage();
