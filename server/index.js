@@ -97,7 +97,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     const previousMessages = json.previousMessages;
     const messagesNow = [
       {
-        role: "system",
+        role: "user",
         content: `Search for relevant information in the given context to provide deep, exhaustive and thorough answer the user's question in same language as their question so that they understand the answer.
 
         Question: ${json.prompt}
@@ -110,6 +110,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     ];
 
     const concatenatedMessages = [...previousMessages, ...messagesNow];
+    console.log("concatenatedMessages are the  ones sent: ", concatenatedMessages);
     let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -206,7 +207,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
     await updateUserWordCount(context, userId);
     const messageNow = [
             {
-              role: "system",
+              role: "user",
               content: `Search for relevant information in the given context to provide short and direct answer the user's question in same language as their question so that they understand the answer.
           Question: ${prompt}
           Rules:
@@ -216,8 +217,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
             },
           ];
     const concatenatedMessages = [...previousMessages, ...messageNow];
-    console.log("concatenatedMessages: ", concatenatedMessages)
-    console.log("temperature: ", temperature)
+    console.log("concatenatedMessages are the ones sent: ", concatenatedMessages)
       
     const openAIResponse = await fetch(
       "https://api.openai.com/v1/chat/completions",
