@@ -46,7 +46,8 @@ const generateResponse = async (chatElement, userMessage) => {
 
   try {
     const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAINoStream",
+      "https://us-central1-vioniko-82fcb.cloudfunctions.net/fetchOpenAINoStream",
+     // "https://vionikochat.onrender.com/fetchOpenAINoStream",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

@@ -75,7 +75,7 @@ function loadIframe() {
       </div>
     </div>
     <div id="form-overlay" class="form-overlay" style="z-index: 9999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>
-  <script src="static/scripts/chat.js"></script>
+  <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js"></script>
   </body>
 </html>
   `;
@@ -98,7 +98,7 @@ function initCSSWidget() {
       id: "iframeCss",
       rel: "stylesheet",
       type: "text/css",
-      href: "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css",
+      href: "static/css/iframe.css",
       media: "all",
     })
   );
