@@ -2,6 +2,7 @@ import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
 import fetch from "node-fetch";
+import { YoutubeLoader } from "langchain/document_loaders/web/youtube";
 import dotenv from "dotenv";
 import getJsonFromStorage from "./context.js";
 import { contextRetriever } from "./similarDocs.js";
@@ -74,7 +75,26 @@ app.post('/openChat', async (req, res) => {
 });
 
 
+app.post("/getTranscript", async (req, res) => {
+  try {
+    const { url, language = "en", addVideoInfo = true } = req.body;
 
+    if (!url) {
+      return res.status(400).json({ error: "URL must be provided" });
+    }
+
+    const loader = YoutubeLoader.createFromUrl(url, {
+      language,
+      addVideoInfo,
+    });
+
+    const docs = await loader.load();
+    res.status(200).json(docs);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
 
 app.post("/fetchOpenAI", async (req, res) => {
   try {
