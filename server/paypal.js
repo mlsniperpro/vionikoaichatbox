@@ -15,8 +15,6 @@ async function getAccessToken() {
       },
       body: "grant_type=client_credentials",
     });
-
-
     const responseBody = await response.json();
 
     if (!response.ok) {

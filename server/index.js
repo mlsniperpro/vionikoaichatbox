@@ -9,6 +9,8 @@ import { contextRetriever } from "./similarDocs.js";
 import { getAccessToken } from "./paypal.js";
 import {updateUserWordCount, saveChatToFirestore} from "./wordCountUpdate.js";
 import { OpenAI } from "openai";
+import queryGetContext from "./cloudContext.js";
+
 
 
 
@@ -20,8 +22,6 @@ const app = express();
 
 app.use(cors());
 app.use(express.json()); // Important: Use JSON middleware
-//app.use(bodyParser.json());
-// Cache setup
 const cache = {};
 
 function setCache(key, value, ttl) {
@@ -36,6 +36,8 @@ function setCache(key, value, ttl) {
     }, ttl),
   };
 }
+
+
 
 function getCache(key) {
   const data = cache[key];
@@ -101,6 +103,7 @@ app.post("/fetchOpenAI", async (req, res) => {
     const json = await req.body;
     const userId = json.userId;
     const fileName = json.fileName + ".json";
+    /*
     console.log("json: ", json)
     // Check if fileContent is in cache
     const cacheKey = `${userId}-${fileName}`;
@@ -113,6 +116,8 @@ app.post("/fetchOpenAI", async (req, res) => {
     }
 
     const context = await contextRetriever(fileContent, json.prompt);
+    */
+   const context = await queryGetContext(userId, json.fileName, json.prompt);
     await updateUserWordCount(context, userId);
     const previousMessages = json.previousMessages;
     const messagesNow = [
