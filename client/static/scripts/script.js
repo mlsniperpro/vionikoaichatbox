@@ -3,7 +3,7 @@ const chatbotToggler = document.querySelector(".chatbot-toggler");
 const previousMessages = [
   {
     role: "system",
-    content: window.parent.vionikoaiChat?.systemPrompt || '',
+    content: "Hello, how are you"//window.parent.vionikoaiChat?.systemPrompt || "",
   },
 ];
 const closeBtn = document.querySelector(".close-btn");
@@ -41,13 +41,13 @@ const generateResponse = async (chatElement, userMessage) => {
     phone: window.parent.vionikoaiChat?.phone,
     embedded: true,
     previousMessages,
-    temperature: window.parent.vionikoaiChat?.temperature,
+    temperature: Number(window.parent.vionikoaiChat?.temperature),
   };
 
   try {
-    const response = await fetch(
+    /*const response = await fetch(
       "https://us-central1-vioniko-82fcb.cloudfunctions.net/fetchOpenAINoStream",
-     // "https://vionikochat.onrender.com/fetchOpenAINoStream",
+      // "https://vionikochat.onrender.com/fetchOpenAINoStream",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -61,7 +61,45 @@ const generateResponse = async (chatElement, userMessage) => {
 
     const responseData = await response.json();
     const responseMessage = responseData.choices[0].message.content.trim();
-    messageElement.textContent = responseMessage;
+    messageElement.textContent = responseMessage;*/
+    const response = await fetch(
+      "https://vionikochat.onrender.com/fetchOpenAI",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+
+        body: JSON.stringify(requestData),
+      }
+    );
+
+    if (!response.ok) throw new Error("Network response was not ok");
+     let accumulatedData = "";
+     let accumulatedContent = "";
+     const reader = response.body.getReader();
+     chatElement.classList.remove("loader");
+     while (true) {
+       const { done, value } = await reader.read();
+       accumulatedData += new TextDecoder().decode(value);
+       const match = accumulatedData.match(/data: (.*?})\s/);
+
+       if (match && match[1]) {
+         let jsonData;
+         try {
+           jsonData = JSON.parse(match[1]);
+           if (jsonData.choices[0].finish_reason === "stop") break;
+         } catch (error) {
+           continue;
+         }
+
+         const { delta } = jsonData.choices[0];
+         if (delta && delta.content) {
+           accumulatedContent += delta.content;
+             messageElement.textContent =
+               accumulatedContent;
+         }
+         accumulatedData = accumulatedData.replace(match[0], "");
+       }
+     }
   } catch (error) {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
