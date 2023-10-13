@@ -3,7 +3,7 @@ const chatbotToggler = document.querySelector(".chatbot-toggler");
 const previousMessages = [
   {
     role: "system",
-    content: "Hello, how are you"//window.parent.vionikoaiChat?.systemPrompt || "",
+    content: window.parent.vionikoaiChat?.systemPrompt || "",
   },
 ];
 const closeBtn = document.querySelector(".close-btn");
