@@ -59,6 +59,7 @@ const firstBotMessage = () => {
     }</span></p>`;
   document.getElementById("chat-timestamp").append(getTime());
   document.getElementById("userInput").scrollIntoView(false);
+  getBotResponse(window.vionikoaiChat.firstMessage, true);
 };
 
 // Function to get bot response
@@ -78,7 +79,7 @@ const buttonSendText = (sampleText) => {
 };
 
 // Function to get bot response from an API
-async function getBotResponse(input) {
+async function getBotResponse(input, loader=false) {
   appendMessage('', "bot");
   const currentMessageElement = document.getElementById("chatbox").lastElementChild;
   currentMessageElement.classList.add("loader");
@@ -106,6 +107,9 @@ async function getBotResponse(input) {
         body: JSON.stringify(requestData),
       }
     );
+    if (loader){
+      return;
+    }
 
     if (!response.ok) throw new Error("Network response was not ok");
 
