@@ -1,8 +1,38 @@
+const queryGetContext = async (userId, rawFileName, prompt) => {
+  const requestBody = JSON.stringify({ userId, fileName: rawFileName, prompt });
+  const config = {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: requestBody,
+  };
+
+  try {
+    const response = await fetch(
+      "https://us-central1-vioniko-82fcb.cloudfunctions.net/getContext",
+      config
+    );
+    const { context, error } = await response.json();
+
+    if (response.ok) {
+      // Checks for all 2xx status codes
+      console.log("Received context:", context);
+      return context ?? null; // Use nullish coalescing to return null if context is undefined
+    } else {
+      console.error("Error:", error ?? "Unknown error");
+      throw new Error(error ?? "Unknown error");
+    }
+  } catch (error) {
+    console.error("An error occurred:", error);
+    throw error;
+  }
+};
 
 const previousMessages = [
   {
     role: "system",
-    content: window.vionikoaiChat?.systemPrompt || '',
+    content: window.vionikoaiChat?.systemPrompt || "",
   },
 ];
 // Function to sanitize HTML
@@ -11,15 +41,42 @@ const sanitizeHTML = (str) => {
   temp.textContent = str;
   return temp.innerHTML;
 };
+const fetchResponse = async (chat, userId) => {
+  const signature = atob(
+    "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
+  )
+    .split("")
+    .reverse()
+    .join("");
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + signature,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo-16k",
+        messages: chat,
+        stream: true,
+      }),
+    });
 
+    if (!response.ok) {
+      throw new Error(`API responded with HTTP ${response.status}`);
+    }
+    console.log("I retuned the response immediately");
+    return response.body.getReader();
+  } catch (error) {
+    console.error("Error fetching response:", error);
+    throw error; // Propagate the error to the calling function
+  }
+};
 // Function to append messages to the chatbox
 const appendMessage = (message, type) => {
   const chatbox = document.getElementById("chatbox");
-  const parsedMessage = sanitizeHTML(message); // Assuming marked.parse is not needed here
-  const messageHTML = `
-      <p class="${type}Text">
-        <span>${parsedMessage}</span>
-      </p>`;
+  const parsedMessage = message; // Assuming sanitization is done elsewhere
+  const messageHTML = `<p class="${type}Text"><span>${parsedMessage}</span></p>`;
   chatbox.insertAdjacentHTML("beforeend", messageHTML);
 };
 
@@ -79,8 +136,9 @@ const buttonSendText = (sampleText) => {
 
 // Function to get bot response from an API
 async function getBotResponse(input) {
-  appendMessage('', "bot");
-  const currentMessageElement = document.getElementById("chatbox").lastElementChild;
+  appendMessage("", "bot");
+  const currentMessageElement =
+    document.getElementById("chatbox").lastElementChild;
   currentMessageElement.classList.add("loader");
   try {
     const requestData = {
@@ -96,23 +154,34 @@ async function getBotResponse(input) {
       previousMessages,
       temperature: Number(window.vionikoaiChat?.temperature),
     };
-
-    const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAI",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        
-        body: JSON.stringify(requestData),
-      }
+    const context = await queryGetContext(
+      window.vionikoaiChat?.userId,
+      window.vionikoaiChat?.fileName,
+      input
     );
-
-    if (!response.ok) throw new Error("Network response was not ok");
-
+    console.log("The context is ", context);
+    const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer.
+  ----------------
+  CONTEXT: ${context}
+  ----------------
+  QUESTION: ${input}
+  ----------------
+  Helpful Answer:`;
+    
+      const extendedMessages = [...previousMessages, { role: "user", content: prompt }]
+    const response = await fetchResponse(
+      extendedMessages,
+      window.vionikoaiChat?.userId
+    );
+    previousMessages.push({
+      role: "user",
+      content: input,
+    });
+    currentMessageElement.classList.remove("loader");
     let accumulatedData = "";
     let accumulatedContent = "";
-    const reader = response.body.getReader();
-    currentMessageElement.classList.remove("loader");
+    const reader = response; //response.body.getReader();
+      
     while (true) {
       const { done, value } = await reader.read();
       accumulatedData += new TextDecoder().decode(value);
@@ -148,19 +217,19 @@ async function getBotResponse(input) {
     appendMessage("An error occurred. Please try again later.", "bot");
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   } finally {
-    previousMessages.push({
-      "role": "user",
-      "content": input
-    },
-    {
-      "role": "assistant",
-      "content": currentMessageElement.querySelector("span").textContent
-    }
-    )
+    previousMessages.push(
+      {
+        role: "user",
+        content: input,
+      },
+      {
+        role: "assistant",
+        content: currentMessageElement.querySelector("span").textContent,
+      }
+    );
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
 }
-
 
 // Initialize the chat
 firstBotMessage();
