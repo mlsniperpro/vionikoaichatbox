@@ -136,7 +136,6 @@ app.post("/fetchOpenAI", async (req, res) => {
 
     const concatenatedMessages = [...previousMessages, ...messagesNow];
     console.log("concatenatedMessages are the  ones sent: ", concatenatedMessages);
-    console.log("The temperature is: ", Number(json.temperature) || 0.7)
     let response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {

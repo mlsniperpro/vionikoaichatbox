@@ -26,8 +26,9 @@ const createChatLi = (message, className) => {
   return chatLi;
 };
 
+// ## Generate Response
 // Function to generate a chat response from the server
-const generateResponse = async (chatElement, userMessage, loader=false) => {
+const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
   const requestData = {
     userId: window.parent.vionikoaiChat?.userId,
@@ -44,6 +45,23 @@ const generateResponse = async (chatElement, userMessage, loader=false) => {
   };
 
   try {
+    /*const response = await fetch(
+      "https://us-central1-vioniko-82fcb.cloudfunctions.net/fetchOpenAINoStream",
+      // "https://vionikochat.onrender.com/fetchOpenAINoStream",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestData),
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Network response was not ok");
+    }
+
+    const responseData = await response.json();
+    const responseMessage = responseData.choices[0].message.content.trim();
+    messageElement.textContent = responseMessage;*/
     const response = await fetch(
       "https://vionikochat.onrender.com/fetchOpenAI",
       {
@@ -53,10 +71,6 @@ const generateResponse = async (chatElement, userMessage, loader=false) => {
         body: JSON.stringify(requestData),
       }
     );
-
-    if (loader){
-      return;
-    }
 
     if (!response.ok) throw new Error("Network response was not ok");
      let accumulatedData = "";
@@ -101,6 +115,8 @@ const generateResponse = async (chatElement, userMessage, loader=false) => {
     chatElement.classList.remove("loader");
   }
 };
+
+// ## Handle Chat
 // Function to handle chat interactions
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
   const userMessage = chatInput.value.trim();
@@ -141,6 +157,3 @@ document.addEventListener("DOMContentLoaded", () => {
     document.body.classList.toggle("show-chatbot")
   );
 });
-
-//Initiate the backend by calling the generateResponse function
-generateResponse(chatbox, "", true);
