@@ -1,3 +1,214 @@
+/*Context retrieval logic*/
+function cosineSimilarity(a, b) {
+  const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
+  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
+  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
+  return dotProduct / (magnitudeA * magnitudeB);
+}
+const createEmbeddings = async ({ token, model, input }) => {
+  const response = await fetch("https://api.openai.com/v1/embeddings", {
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    method: "POST",
+    body: JSON.stringify({ input, model }),
+  });
+
+  const { error, data, usage } = await response.json();
+
+  return data;
+};
+const getEmbeddings = async (chunks) => {
+  const signature = atob(
+    "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
+  )
+    .split("")
+    .reverse()
+    .join("");
+  const embeddingsWithChunks = await Promise.all(
+    chunks.map(async (chunk) => {
+      const embedding = await createEmbeddings({
+        token: signature,
+        model: "text-embedding-ada-002",
+        input: chunk,
+      });
+
+      return { chunk, embedding };
+    })
+  );
+  return embeddingsWithChunks;
+};
+
+function getSimilarity(embeddingsWithChunks, query_embedding) {
+  const similarities = embeddingsWithChunks.map(({ embedding }, index) => {
+    // Access the embedding data from embeddingsWithChunks
+    const embeddingData = embedding[0].embedding;
+    try {
+      return cosineSimilarity(embeddingData, query_embedding);
+    } catch (error) {
+      console.error(`Error processing embedding #${index + 1}:`, error.message);
+      return null;
+    }
+  });
+  return similarities;
+}
+
+function getSimilarDocs(similarities, docs) {
+  const similarDocs = similarities.map((similarity, index) => {
+    return {
+      similarity: similarity,
+      doc: docs[index],
+    };
+  });
+  return similarDocs;
+}
+
+function sortSimilarDocs(similarDocs, numDocs) {
+  const sortedSimilarDocs = similarDocs.sort(
+    (a, b) => b.similarity - a.similarity
+  );
+  return sortedSimilarDocs.slice(0, numDocs); // Return only the specified number of documents
+}
+
+const getSimilarDocsFromChunks = async (
+  embeddingsWithChunks,
+  query,
+  numDocs
+) => {
+  const [query_embedding_obj] = await getEmbeddings([query]);
+  const query_embedding = query_embedding_obj.embedding[0].embedding;
+  const similarities = getSimilarity(embeddingsWithChunks, query_embedding);
+  const chunks = embeddingsWithChunks.map(({ chunk }) => chunk);
+  const similarDocs = getSimilarDocs(similarities, chunks);
+  const sortedSimilarDocs = sortSimilarDocs(similarDocs, numDocs);
+  return sortedSimilarDocs;
+};
+const contextRetriever = async (embeddingData, input) => {
+  let texts;
+  const docs = await getSimilarDocsFromChunks(embeddingData, input, 4);
+  texts = docs.map((doc) => doc.doc);
+  texts = texts.join(" ");
+  return texts;
+};
+
+/*Context retrieval logic ends here*/
+
+//The file retrieval logic
+let fileContentInRam = null;
+
+async function cacheFileContent(content) {
+  console.log("I am now caching the file content");
+  const cache = await caches.open("fileContentCache");
+  const request = new Request("fileContentKey");
+  const response = new Response(JSON.stringify(content));
+  await cache.put(request, response);
+}
+
+async function getCachedFileContent() {
+  console.log("I am now getting the cached file content");
+  const cache = await caches.open("fileContentCache");
+  const response = await cache.match("fileContentKey");
+  if (response) {
+    const content = await response.json();
+    return content;
+  }
+  return null;
+}
+
+async function queryFirebaseFunction() {
+  console.log("I am now querying the firebase function");
+  const data = {
+    userId: window.parent.vionikoaiChat?.userId,
+    fileName: window.parent.vionikoaiChat?.fileName,
+  };
+
+  const response = await fetch(
+    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getFileContent",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (response.ok) {
+    const result = await response.json();
+    return result.fileContent;
+  } else {
+    throw new Error(
+      `Failed to query function: ${response.status} ${response.statusText}`
+    );
+  }
+}
+
+async function getFileContent() {
+  console.log("I am now getting the file content");
+  // Try getting content from RAM
+  if (fileContentInRam) {
+    console.log("I retrived the content from the RAM");
+    return fileContentInRam;
+  }
+
+  // Try getting content from Cache
+  const cachedContent = await getCachedFileContent();
+  if (cachedContent) {
+    fileContentInRam = cachedContent;
+    return cachedContent;
+  }
+
+  // Fetch content from server
+  const fetchedContent = await queryFirebaseFunction();
+
+  // Store in both RAM and Cache
+  fileContentInRam = fetchedContent;
+  await cacheFileContent(fetchedContent);
+
+  return fetchedContent;
+}
+getFileContent()
+  .then((content) => {
+    console.log("File content:", content);
+  })
+  .catch((error) => {
+    console.error("An error occurred:", error);
+  });
+
+//The file retrieval logic ends here
+const fetchResponse = async (chat, userId) => {
+  const signature = atob(
+    "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
+  )
+    .split("")
+    .reverse()
+    .join("");
+  try {
+    console.log("I am now fetching the response");
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: "Bearer " + signature,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-3.5-turbo-16k",
+        messages: chat,
+        stream: true,
+      }),
+    });
+    console.log("I got the response");
+    if (!response.ok) {
+      throw new Error(`API responded with HTTP ${response.status}`);
+    }
+    console.log("I retuned the response immediately");
+    return response.body.getReader();
+  } catch (error) {
+    console.error("Error fetching response:", error);
+    throw error; // Propagate the error to the calling function
+  }
+};
 // ## Initialization
 const chatbotToggler = document.querySelector(".chatbot-toggler");
 const previousMessages = [
@@ -26,7 +237,6 @@ const createChatLi = (message, className) => {
   return chatLi;
 };
 
-// ## Generate Response
 // Function to generate a chat response from the server
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
@@ -43,63 +253,45 @@ const generateResponse = async (chatElement, userMessage) => {
     previousMessages,
     temperature: Number(window.parent.vionikoaiChat?.temperature),
   };
+  const fileContent = await getFileContent();
+  const context = await contextRetriever(fileContent, userMessage); 
+  const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
+  ----------------
+  CONTEXT: ${context}
+  ----------------
+  QUESTION: ${userMessage}
+  ----------------
+  Helpful Answer:`;
+  const extendedMessages = [...previousMessages,
+  {role: "user", "content": prompt}];
 
   try {
-    /*const response = await fetch(
-      "https://us-central1-vioniko-82fcb.cloudfunctions.net/fetchOpenAINoStream",
-      // "https://vionikochat.onrender.com/fetchOpenAINoStream",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(requestData),
-      }
-    );
+    let accumulatedData = "";
+    let accumulatedContent = "";
+    const reader = await fetchResponse(extendedMessages, window.parent.vionikoaiChat?.userId);
+    chatElement.classList.remove("loader");
+    while (true) {
+      const { done, value } = await reader.read();
+      accumulatedData += new TextDecoder().decode(value);
+      const match = accumulatedData.match(/data: (.*?})\s/);
 
-    if (!response.ok) {
-      throw new Error("Network response was not ok");
+      if (match && match[1]) {
+        let jsonData;
+        try {
+          jsonData = JSON.parse(match[1]);
+          if (jsonData.choices[0].finish_reason === "stop") break;
+        } catch (error) {
+          continue;
+        }
+
+        const { delta } = jsonData.choices[0];
+        if (delta && delta.content) {
+          accumulatedContent += delta.content;
+          messageElement.textContent = accumulatedContent;
+        }
+        accumulatedData = accumulatedData.replace(match[0], "");
+      }
     }
-
-    const responseData = await response.json();
-    const responseMessage = responseData.choices[0].message.content.trim();
-    messageElement.textContent = responseMessage;*/
-    const response = await fetch(
-      "https://vionikochat.onrender.com/fetchOpenAI",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-
-        body: JSON.stringify(requestData),
-      }
-    );
-
-    if (!response.ok) throw new Error("Network response was not ok");
-     let accumulatedData = "";
-     let accumulatedContent = "";
-     const reader = response.body.getReader();
-     chatElement.classList.remove("loader");
-     while (true) {
-       const { done, value } = await reader.read();
-       accumulatedData += new TextDecoder().decode(value);
-       const match = accumulatedData.match(/data: (.*?})\s/);
-
-       if (match && match[1]) {
-         let jsonData;
-         try {
-           jsonData = JSON.parse(match[1]);
-           if (jsonData.choices[0].finish_reason === "stop") break;
-         } catch (error) {
-           continue;
-         }
-
-         const { delta } = jsonData.choices[0];
-         if (delta && delta.content) {
-           accumulatedContent += delta.content;
-             messageElement.textContent =
-               accumulatedContent;
-         }
-         accumulatedData = accumulatedData.replace(match[0], "");
-       }
-     }
   } catch (error) {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
