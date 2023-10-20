@@ -335,7 +335,8 @@ const generateResponse = async (chatElement, userMessage) => {
             break;
           }
         } catch (error) {
-          continue;
+          console.error("An error occurred:", error);
+          throw error;
         }
 
         const { delta } = jsonData.choices[0];
