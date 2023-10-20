@@ -28,7 +28,6 @@ const generateFormFields = () => {
     .join("");
 };
 
-
 function loadIframe() {
   let containerDiv = document.createElement("div");
   containerDiv.setAttribute("id", "container");
@@ -75,7 +74,7 @@ function loadIframe() {
       </div>
     </div>
     <div id="form-overlay" class="form-overlay" style="z-index: 9999;"><form id="user-form">${formFields}<input type="submit" value="Submit"></form></div>
-  <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js"></script>
+  <script src="static/scripts/chat.js"></script>
   </body>
 </html>
   `;

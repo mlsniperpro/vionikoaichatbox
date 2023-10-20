@@ -98,7 +98,7 @@ const contextRetriever = async (embeddingData, input) => {
 let fileContentInRam = null;
 
 async function cacheFileContent(content) {
-  console.log("I am now caching the file content")
+  console.log("I am now caching the file content");
   const cache = await caches.open("fileContentCache");
   const request = new Request("fileContentKey");
   const response = new Response(JSON.stringify(content));
@@ -106,7 +106,7 @@ async function cacheFileContent(content) {
 }
 
 async function getCachedFileContent() {
-  console.log("I am now getting the cached file content")
+  console.log("I am now getting the cached file content");
   const cache = await caches.open("fileContentCache");
   const response = await cache.match("fileContentKey");
   if (response) {
@@ -117,7 +117,7 @@ async function getCachedFileContent() {
 }
 
 async function queryFirebaseFunction() {
-  console.log("I am now querying the firebase function")
+  console.log("I am now querying the firebase function");
   const data = {
     userId: window.vionikoaiChat?.userId,
     fileName: window.vionikoaiChat?.fileName,
@@ -148,7 +148,7 @@ async function getFileContent() {
   console.log("I am now getting the file content");
   // Try getting content from RAM
   if (fileContentInRam) {
-    console.log("I retrived the content from the RAM")
+    console.log("I retrived the content from the RAM");
     return fileContentInRam;
   }
 
@@ -197,7 +197,7 @@ const fetchResponse = async (chat, userId) => {
     .reverse()
     .join("");
   try {
-    console.log("I am now fetching the response")
+    console.log("I am now fetching the response");
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -210,7 +210,7 @@ const fetchResponse = async (chat, userId) => {
         stream: true,
       }),
     });
-    console.log("I got the response")
+    console.log("I got the response");
     if (!response.ok) {
       throw new Error(`API responded with HTTP ${response.status}`);
     }
@@ -304,10 +304,7 @@ async function getBotResponse(input) {
       temperature: Number(window.vionikoaiChat?.temperature),
     };
     const fileContent = await getFileContent();
-    const context = await contextRetriever(
-      fileContent,
-      input
-    ); 
+    const context = await contextRetriever(fileContent, input);
     currentMessageElement.classList.remove("loader");
     const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
   ----------------
@@ -329,7 +326,7 @@ async function getBotResponse(input) {
       role: "user",
       content: input,
     });
-    
+
     let accumulatedData = "";
     let accumulatedContent = "";
     const reader = response; //response.body.getReader();
@@ -343,7 +340,56 @@ async function getBotResponse(input) {
         let jsonData;
         try {
           jsonData = JSON.parse(match[1]);
-          if (jsonData.choices[0].finish_reason === "stop") break;
+          if (jsonData.choices[0].finish_reason === "stop") {
+            // First fetch request
+            fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: input,
+                  role: "user",
+                }),
+              }
+            )
+              .then((res) => res.json())
+              .then((data) => console.log(data))
+              .catch((err) => console.error("Error:", err));
+
+            // Second fetch request
+            fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: accumulatedContent,
+                  role: "assistant",
+                }),
+              }
+            )
+              .then((res) => res.json())
+              .then((data) => console.log(data))
+              .catch((err) => console.error("Error:", err));
+
+            // Break statement
+            break;
+          }
         } catch (error) {
           continue;
         }

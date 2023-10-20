@@ -254,7 +254,7 @@ const generateResponse = async (chatElement, userMessage) => {
     temperature: Number(window.parent.vionikoaiChat?.temperature),
   };
   const fileContent = await getFileContent();
-  const context = await contextRetriever(fileContent, userMessage); 
+  const context = await contextRetriever(fileContent, userMessage);
   const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
   ----------------
   CONTEXT: ${context}
@@ -262,13 +262,18 @@ const generateResponse = async (chatElement, userMessage) => {
   QUESTION: ${userMessage}
   ----------------
   Helpful Answer:`;
-  const extendedMessages = [...previousMessages,
-  {role: "user", "content": prompt}];
+  const extendedMessages = [
+    ...previousMessages,
+    { role: "user", content: prompt },
+  ];
 
   try {
     let accumulatedData = "";
     let accumulatedContent = "";
-    const reader = await fetchResponse(extendedMessages, window.parent.vionikoaiChat?.userId);
+    const reader = await fetchResponse(
+      extendedMessages,
+      window.parent.vionikoaiChat?.userId
+    );
     chatElement.classList.remove("loader");
     while (true) {
       const { done, value } = await reader.read();
@@ -279,7 +284,56 @@ const generateResponse = async (chatElement, userMessage) => {
         let jsonData;
         try {
           jsonData = JSON.parse(match[1]);
-          if (jsonData.choices[0].finish_reason === "stop") break;
+          if (jsonData.choices[0].finish_reason === "stop") {
+            console.log("I am now running the fecth");
+            fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: input,
+                  role: "user",
+                }),
+              }
+            )
+              .then((res) => res.json())
+              .then((data) => console.log(data))
+              .catch((err) => console.error("Error:", err));
+
+            // Second fetch request
+            fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: accumulatedContent,
+                  role: "assistant",
+                }),
+              }
+            )
+              .then((res) => res.json())
+              .then((data) => console.log(data))
+              .catch((err) => console.error("Error:", err));
+
+            // Break statement
+            break;
+          }
         } catch (error) {
           continue;
         }
