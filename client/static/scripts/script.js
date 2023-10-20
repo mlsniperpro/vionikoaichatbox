@@ -299,7 +299,7 @@ const generateResponse = async (chatElement, userMessage) => {
                   email: requestData.email,
                   phone: requestData.phone,
                   fileName: requestData.fileName,
-                  message: input,
+                  message: requestData.prompt,
                   role: "user",
                 }),
               }
