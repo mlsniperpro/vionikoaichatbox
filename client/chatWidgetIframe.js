@@ -70,50 +70,64 @@ function loadIframe() {
   iframe.setAttribute("title", "Vionikaio Chat");
 
   const formFields = generateFormFields();
-  const srcTitle = `
-  <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>Chatbot in JavaScript | CodingNepal</title>
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <!-- Google Fonts Link For Icons -->
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-    <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
-  </head>
-  <body>
-    <button class="chatbot-toggler">
-      <span class="material-symbols-rounded">mode_comment</span>
-      <span class="material-symbols-outlined">close</span>
-    </button>
-    <div class="chatbot">
-      <header>
-        <h2>${window.vionikoaiChat?.chatName}</h2>
-        <span class="close-btn material-symbols-outlined">close</span>
-      </header>
-      <ul class="chatbox">
-        <li class="chat incoming">
-          <p>${
-            window.vionikoaiChat?.firstMessage || "How can I help you today?"
-          }</p>
-        </li>
-      </ul>
-      <div class="chat-input">
-        <textarea placeholder="${
-          window.vionikoaiChat?.inputPlaceholder ||
-          "Tap Enter to send a message"
-        }" spellcheck="false" required></textarea>
-        <span id="send-btn" class="material-symbols-rounded">send</span>
-      </div>
+const srcTitle = `
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title>Chatbot in JavaScript | CodingNepal</title>
+  <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
+  <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+  <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
+  <style>
+    .branding {
+      position: fixed;
+      bottom: 0;
+      width: 100%;
+      text-align: center;
+      background-color: #f1f1f1;
+      padding: 5px;
+      display: none;
+      font-size: 12px;
+      margin-bottom: 10px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body>
+  <button class="chatbot-toggler">
+    <span class="material-symbols-rounded">mode_comment</span>
+    <span class="material-symbols-outlined">close</span>
+  </button>
+  <div class="chatbot" style="position: relative;">
+    <header>
+      <h2>${window.vionikoaiChat?.chatName}</h2>
+      <span class="close-btn material-symbols-outlined">close</span>
+    </header>
+    <ul class="chatbox">
+      <li class="chat incoming">
+        <p>${
+          window.vionikoaiChat?.firstMessage || "How can I help you today?"
+        }</p>
+      </li>
+    </ul>
+    <div class="chat-input">
+      <textarea placeholder="${
+        window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message"
+      }" spellcheck="false" required></textarea>
+      <span id="send-btn" class="material-symbols-rounded">send</span>
     </div>
-   <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="${
-    window.vionikoaiChat?.submit || "Submit"
-  }"></form></div>
-  </body>
+  </div>
+  <div class="branding">Powered by Vioniko</div>
+  <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="${
+  window.vionikoaiChat?.submit || "Submit"
+}"></form></div>
+</body>
 </html>
-  `;
+`;
+
 
   iDiv.appendChild(iframe);
   iframe.srcdoc = srcTitle;
@@ -121,33 +135,36 @@ function loadIframe() {
   iframe.style.height = "100%";
 
   // Attach form submit event
-  iframe.onload = () => {
-    const doc = iframe.contentWindow.document;
-    const form = doc.getElementById("user-form");
-    const chatbotToggler = doc.querySelector(".chatbot-toggler");
-    const formOverlay = doc.getElementById("form-overlay");
-    const chatbot = doc.querySelector(".chatbot");
+ iframe.onload = () => {
+   const doc = iframe.contentWindow.document;
+   const form = doc.getElementById("user-form");
+   const chatbotToggler = doc.querySelector(".chatbot-toggler");
+   const formOverlay = doc.getElementById("form-overlay");
+   const chatbot = doc.querySelector(".chatbot");
+   const branding = doc.querySelector(".branding"); // Get the branding element
 
-    if (form) {
-      form.addEventListener("submit", (e) => {
-        e.preventDefault();
-        validateForm(iframe);
-      });
-    }
+   if (form) {
+     form.addEventListener("submit", (e) => {
+       e.preventDefault();
+       validateForm(iframe);
+     });
+   }
 
-    if (chatbotToggler) {
-      chatbotToggler.addEventListener("click", () => {
-        console.log(formOverlay.style.display==="block")
-        if (formOverlay.style.display==="block") {
-          formOverlay.style.display = "none";
-          chatbot.style.display = "none";
-        } else {
-          formOverlay.style.display = "block";
-          chatbot.style.display = "none";
-        }
-      });
-    }
-  };
+   if (chatbotToggler) {
+     chatbotToggler.addEventListener("click", () => {
+       if (formOverlay.style.display === "block") {
+         formOverlay.style.display = "none";
+         chatbot.style.display = "none";
+         branding.style.display = "none"; // Hide the branding
+       } else {
+         formOverlay.style.display = "block";
+         chatbot.style.display = "none";
+         branding.style.display = "block"; // Show the branding
+       }
+     });
+   }
+ };
+
 }
 
 // Initialize the widget
