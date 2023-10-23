@@ -94,8 +94,10 @@ function loadIframe() {
       z-index: 1000;
     }
     .chat-input {
-      z-index: 100100000000000;
-      margin-bottom: 10px;
+      z-index: 100177867456876576t768875676876786;
+      position: sticky;  /* Make it sticky */
+      bottom: 0;  /* Stick it to the bottom */
+      margin-top: 10px;
     }
     .chatbot {
       margin-bottom: 20px;

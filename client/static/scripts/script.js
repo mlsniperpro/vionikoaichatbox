@@ -285,7 +285,9 @@ const generateResponse = async (chatElement, userMessage) => {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
-            console.log("I am now running the fecth");
+            console.log("I am now running the fetch");
+
+            // First fetch request
             fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
               {
@@ -305,31 +307,36 @@ const generateResponse = async (chatElement, userMessage) => {
               }
             )
               .then((res) => res.json())
-              .then((data) => console.log(data))
-              .catch((err) => console.error("Error:", err));
+              .then((data) => {
+                console.log(data);
 
-            // Second fetch request
-            fetch(
-              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: requestData.userId,
-                  chatId: requestData.chatId,
-                  chatName: requestData.chatName,
-                  name: requestData.name,
-                  email: requestData.email,
-                  phone: requestData.phone,
-                  fileName: requestData.fileName,
-                  message: accumulatedContent,
-                  role: "assistant",
-                }),
-              }
-            )
+                // Second fetch request inside the .then() of the first fetch
+                return fetch(
+                  "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+                  {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      userId: requestData.userId,
+                      chatId: requestData.chatId,
+                      chatName: requestData.chatName,
+                      name: requestData.name,
+                      email: requestData.email,
+                      phone: requestData.phone,
+                      fileName: requestData.fileName,
+                      message: accumulatedContent,
+                      role: "assistant",
+                    }),
+                  }
+                );
+              })
               .then((res) => res.json())
-              .then((data) => console.log(data))
-              .catch((err) => console.error("Error:", err));
+              .then((data) => {
+                console.log(data);
+              })
+              .catch((err) => {
+                console.error("Error:", err);
+              });
 
             // Break statement
             break;
