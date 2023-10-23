@@ -32,8 +32,6 @@ const generateFormFields = () => {
     .join("");
 };
 
-
-
 // Validate form and hide it if valid, then open chatbox
 const validateForm = (iframe) => {
   const doc = iframe.contentWindow.document;
@@ -53,6 +51,7 @@ const validateForm = (iframe) => {
     chatbot.style.display = "block";
   }
 };
+
 // Load iframe with form and chat
 function loadIframe() {
   let containerDiv = document.createElement("div");
@@ -70,7 +69,7 @@ function loadIframe() {
   iframe.setAttribute("title", "Vionikaio Chat");
 
   const formFields = generateFormFields();
-const srcTitle = `
+  const srcTitle = `
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
@@ -93,6 +92,13 @@ const srcTitle = `
       font-size: 12px;
       margin-bottom: 10px;
       z-index: 1000;
+    }
+    .chat-input {
+      z-index: 100100000000000;
+      margin-bottom: 10px;
+    }
+    .chatbot {
+      margin-bottom: 20px;
     }
   </style>
 </head>
@@ -122,49 +128,46 @@ const srcTitle = `
   </div>
   <div class="branding">Powered by Vioniko</div>
   <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="${
-  window.vionikoaiChat?.submit || "Submit"
-}"></form></div>
+    window.vionikoaiChat?.submit || "Submit"
+  }"></form></div>
 </body>
 </html>
 `;
-
 
   iDiv.appendChild(iframe);
   iframe.srcdoc = srcTitle;
   iframe.style.width = "100%";
   iframe.style.height = "100%";
 
-  // Attach form submit event
- iframe.onload = () => {
-   const doc = iframe.contentWindow.document;
-   const form = doc.getElementById("user-form");
-   const chatbotToggler = doc.querySelector(".chatbot-toggler");
-   const formOverlay = doc.getElementById("form-overlay");
-   const chatbot = doc.querySelector(".chatbot");
-   const branding = doc.querySelector(".branding"); // Get the branding element
+  iframe.onload = () => {
+    const doc = iframe.contentWindow.document;
+    const form = doc.getElementById("user-form");
+    const chatbotToggler = doc.querySelector(".chatbot-toggler");
+    const formOverlay = doc.getElementById("form-overlay");
+    const chatbot = doc.querySelector(".chatbot");
+    const branding = doc.querySelector(".branding");
 
-   if (form) {
-     form.addEventListener("submit", (e) => {
-       e.preventDefault();
-       validateForm(iframe);
-     });
-   }
+    if (form) {
+      form.addEventListener("submit", (e) => {
+        e.preventDefault();
+        validateForm(iframe);
+      });
+    }
 
-   if (chatbotToggler) {
-     chatbotToggler.addEventListener("click", () => {
-       if (formOverlay.style.display === "block") {
-         formOverlay.style.display = "none";
-         chatbot.style.display = "none";
-         branding.style.display = "none"; // Hide the branding
-       } else {
-         formOverlay.style.display = "block";
-         chatbot.style.display = "none";
-         branding.style.display = "block"; // Show the branding
-       }
-     });
-   }
- };
-
+    if (chatbotToggler) {
+      chatbotToggler.addEventListener("click", () => {
+        if (formOverlay.style.display === "block") {
+          formOverlay.style.display = "none";
+          chatbot.style.display = "none";
+          branding.style.display = "none";
+        } else {
+          formOverlay.style.display = "block";
+          chatbot.style.display = "none";
+          branding.style.display = "block";
+        }
+      });
+    }
+  };
 }
 
 // Initialize the widget
