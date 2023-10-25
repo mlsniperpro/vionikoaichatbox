@@ -217,8 +217,6 @@ const previousMessages = [
     content: window.parent.vionikoaiChat?.systemPrompt || "",
   },
 ];
-/*Now let us select an element with the id vionikoid for later */
-const vionikoid = document.getElementById("vionikodiv");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
@@ -391,6 +389,8 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
 // ## Event Listeners
 // Attach event listeners to DOM elements
 document.addEventListener("DOMContentLoaded", () => {
+  /*Now let us select an element with the id vionikoid for later */
+  const vionikoid = document.getElementById("vionikodiv");
   chatInput.addEventListener("input", () => {
     chatInput.style.height = `${inputInitHeight}px`;
     chatInput.style.height = `${chatInput.scrollHeight}px`;
