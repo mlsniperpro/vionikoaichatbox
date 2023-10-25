@@ -218,7 +218,7 @@ const previousMessages = [
   },
 ];
 /*Now let us select an element with the id vionikoid for later */
-const vionikoid = document.getElementById("vionikoid");
+const vionikoid = document.getElementById("vionikodiv");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
