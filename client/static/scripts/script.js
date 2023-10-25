@@ -391,6 +391,11 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
 document.addEventListener("DOMContentLoaded", () => {
   /*Now let us select an element with the id vionikoid for later */
   const vionikoid = document.getElementById("vionikodiv");
+  if (vionikoid) {
+    console.log("I found the element with the id vionikoid")
+  } else {
+    console.error("Element with ID 'vionikodiv' not found");
+  }
   chatInput.addEventListener("input", () => {
     chatInput.style.height = `${inputInitHeight}px`;
     chatInput.style.height = `${chatInput.scrollHeight}px`;
