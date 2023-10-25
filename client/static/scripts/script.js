@@ -390,7 +390,7 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
 // Attach event listeners to DOM elements
 document.addEventListener("DOMContentLoaded", () => {
   /*Now let us select an element with the id vionikoid for later */
-  const vionikoid = document.getElementById("vionikodiv");
+  const vionikoid = window.parent.document.getElementById("vionikodiv");
   if (vionikoid) {
     console.log("I found the element with the id vionikoid")
   } else {
