@@ -217,6 +217,8 @@ const previousMessages = [
     content: window.parent.vionikoaiChat?.systemPrompt || "",
   },
 ];
+/*Now let us select an element with the id vionikoid for later */
+const vionikoid = document.getElementById("vionikoid");
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
@@ -409,5 +411,8 @@ document.addEventListener("DOMContentLoaded", () => {
   );
   chatbotToggler.addEventListener("click", () =>
     document.body.classList.toggle("show-chatbot")
+  );
+  vionikoid.addEventListener("click", () =>
+    document.body.classList.toggle("close")
   );
 });
