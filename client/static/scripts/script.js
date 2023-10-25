@@ -411,13 +411,12 @@ document.addEventListener("DOMContentLoaded", () => {
   sendChatBtn.addEventListener("click", () =>
     handleChat(chatInput, chatbox, inputInitHeight)
   );
-  closeBtn.addEventListener("click", () =>
-    document.body.classList.remove("show-chatbot")
-  );
-  chatbotToggler.addEventListener("click", () =>
-    document.body.classList.toggle("show-chatbot")
-  );
-  vionikoid.addEventListener("click", () =>
-    document.body.classList.toggle("close")
-  );
+  closeBtn.addEventListener("click", () =>{
+    document.body.classList.remove("show-chatbot");
+    vionikoid.classList.toggle("closed");
+});
+  chatbotToggler.addEventListener("click", () =>{
+    document.body.classList.toggle("show-chatbot");
+    vionikoid.classList.toggle("closed");
+});
 });

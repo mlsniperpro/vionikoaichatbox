@@ -61,6 +61,7 @@ function loadIframe() {
 
   const iDiv = document.createElement("div");
   iDiv.setAttribute("id", "vionikodiv");
+  iDiv.classList.add("closed");
   containerDiv.appendChild(iDiv);
 
   const iframe = document.createElement("iframe");
