@@ -10,10 +10,9 @@
 #vionikodiv {
     width: 376px;
     height: calc(100% - 40px);
-    /*max-width: 696px;
+    max-width: 696px;
     min-width: 360px;
     max-height: 696px;
-    */
     right: 0;
     bottom: 0;
     display: block;
@@ -22,6 +21,10 @@
 
 /* When #vionikodiv has class closed  */
 #vionikodiv.closed {
+    max-width: 8rem;
+    max-height: 8rem;
+    min-width: 5rem;
+    min-height: 5rem;
     width: 7.5rem;
     height: 7.5rem;
     right: 0;
