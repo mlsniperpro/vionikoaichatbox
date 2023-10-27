@@ -80,7 +80,7 @@ function loadIframe() {
     <!-- Google Fonts Link For Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
-    <script src="static/scripts/script.js" defer></script>
+    <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
     <button class="chatbot-toggler">
@@ -162,7 +162,7 @@ function initCSSWidget() {
       id: "iframeCss",
       rel: "stylesheet",
       type: "text/css",
-      href: "static/css/iframe.css",
+      href: "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css",
       media: "all",
     })
   );
