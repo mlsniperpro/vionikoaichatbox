@@ -21,14 +21,16 @@
 
 /* When #vionikodiv has class closed  */
 #vionikodiv.closed {
+    background-color: blue;
     max-width: 8rem;
     max-height: 8rem;
-    min-width: 5rem;
+    /*min-width: 5rem;
     min-height: 5rem;
+    */
     width: 7.5rem;
     height: 7.5rem;
     right: 0;
     bottom: 0;
     display: block;
-    position: fixed;
+    position: relative;
 }
