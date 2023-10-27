@@ -1,36 +1,32 @@
 #container {
-    position: fixed;
-    right : 0;
-    bottom: 0;
-    height : auto;
-    width: auto;
-    z-index: 200000000000000000;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  height: auto;
+  width: auto;
+  z-index: 200000000000000000;
 }
 
 #vionikodiv {
-    width: 376px;
-    height: calc(100% - 40px);
-    max-width: 696px;
-    min-width: 360px;
-    max-height: 696px;
-    right: 0;
-    bottom: 0;
-    display: block;
-    position: fixed;
+  width: 376px;
+  height: calc(100% - 40px);
+  max-width: 696px;
+  min-width: 360px;
+  max-height: 696px;
+  right: 0;
+  bottom: 0;
+  display: block;
+  position: fixed;
 }
 
 /* When #vionikodiv has class closed  */
 #vionikodiv.closed {
-    background-color: blue;
-    max-width: 8rem;
-    max-height: 8rem;
-    /*min-width: 5rem;
-    min-height: 5rem;
-    */
-    width: 7.5rem;
-    height: 7.5rem;
-    right: 0;
-    bottom: 0;
-    display: block;
-    position: relative;
+  max-width: 7rem;
+  max-height: 8rem;
+  width: 0.5rem;
+  height: 6.5rem;
+  right: 0;
+  bottom: 0;
+  display: block;
+  position: relative;
 }
