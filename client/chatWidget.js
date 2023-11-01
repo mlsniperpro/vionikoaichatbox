@@ -154,7 +154,7 @@ const loadScripts = () => {
 // Attach Live Support Button
 const attachLiveSupportButton = () => {
   const liveSupportButton = document.getElementById("live-support-button");
-  const supportNumber = "1234567890"; // Replace with your actual support number
+  const supportNumber = "15035833307"; // Replace with your actual support number
 
   liveSupportButton.addEventListener("click", () => {
     // For WhatsApp
