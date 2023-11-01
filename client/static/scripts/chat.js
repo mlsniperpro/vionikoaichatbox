@@ -341,6 +341,7 @@ async function getBotResponse(input) {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
+            window.chatCount? window.chatCount++ : window.chatCount = 1;
             // First fetch request
             fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",

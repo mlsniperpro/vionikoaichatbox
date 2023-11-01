@@ -92,36 +92,46 @@ const initializeForm = () => {
   showForm();
 };
 
-// Append chat HTML to the body with branding
 const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const chatHTML = `<div class="chat-bar-collapsible" style="z-index: 2000000001;">
-    <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button>
-    <div class="content chat-content">
-      <button id="live-support-button" class="live-support-button" aria-label="Live Support" style="background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; opacity: 0.9;">Live Support</button>
-      <div class="full-chat-block">
-        <div class="outer-container">
-          <div class="chat-container">
-            <div id="chatbox" class="chatbox">
-              <h5 id="chat-timestamp" class="chat-timestamp"></h5>
-              <p id="botStarterMessage" class="botText chat-bot-message"><span>Loading...</span></p>
-            </div>
-            <div class="chat-bar-input-block">
-              <div id="userInput" class="user-input">
-                <input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" />
+  const liveSupportButton =
+    window.chatCount >= 3
+      ? '<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; opacity: 0.9;">Live Support</button>'
+      : "";
+
+  const chatHTML = `
+    <div class="chat-bar-collapsible" style="z-index: 2000000001;">
+      <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat" style="">
+        ${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i>
+      </button>
+      <div class="content chat-content" style="">
+        ${liveSupportButton}
+        <div class="full-chat-block" style="">
+          <div class="outer-container" style="">
+            <div class="chat-container" style="">
+              <div id="chatbox" class="chatbox" style="">
+                <h5 id="chat-timestamp" class="chat-timestamp" style=""></h5>
+                <p id="botStarterMessage" class="botText chat-bot-message" style=""><span>Loading...</span></p>
               </div>
+              <div class="chat-bar-input-block" style="">
+                <div id="userInput" class="user-input" style="">
+                  <input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" style="" />
+                </div>
+              </div>
+              <div id="chat-bar-bottom" style=""></div>
+              <div class="branding" style="">Powered by Vioniko</div>
             </div>
-            <div id="chat-bar-bottom"></div>
-            <div class="branding">Powered by Vioniko</div>
           </div>
         </div>
       </div>
     </div>
-  </div>`;
+  `;
+
   document.body.insertAdjacentHTML("beforeend", chatHTML);
 };
+
 
 // Load chat script
 const loadChatScript = () => {
