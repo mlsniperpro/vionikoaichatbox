@@ -99,8 +99,8 @@ const appendChatHTML = () => {
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
   const chatHTML = `<div class="chat-bar-collapsible" style="z-index: 2000000001;">
     <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i></button>
+    <button id="live-support-button" class="live-support-button" aria-label="Live Support">Live Support</button>
     <div class="content chat-content">
-      <button id="live-support-button" class="live-support-button" aria-label="Live Support" style="background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; opacity: 0.9;">Live Support</button>
       <div class="full-chat-block">
         <div class="outer-container">
           <div class="chat-container">
@@ -151,9 +151,11 @@ const loadScripts = () => {
   });
 };
 
-// Attach Live Support Button
-const attachLiveSupportButton = () => {
+// Attach Live Support Button and Chat Button
+const attachButtons = () => {
   const liveSupportButton = document.getElementById("live-support-button");
+  const chatButton = document.getElementById("chat-button");
+  const chatContent = document.querySelector(".content.chat-content");
   const supportNumber = "1234567890"; // Replace with your actual support number
 
   liveSupportButton.addEventListener("click", () => {
@@ -165,6 +167,10 @@ const attachLiveSupportButton = () => {
     // For Telegram, uncomment the line below
     // window.open(`https://t.me/${supportNumber}`, "_blank");
   });
+
+  chatButton.addEventListener("click", () => {
+    chatContent.classList.toggle("active"); // Replace 'active' with the actual class that shows/hides the chat
+  });
 };
 
 // Initialize chat
@@ -172,7 +178,7 @@ const initializeChat = () => {
   loadStyles();
   appendChatHTML();
   loadScripts();
-  attachLiveSupportButton();
+  attachButtons();
 };
 
 // Initialize chat
