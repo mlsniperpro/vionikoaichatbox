@@ -97,9 +97,7 @@ const appendChatHTML = () => {
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
   const liveSupportButton =
-    window.chatCount >= 3
-      ? '<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: 100%; opacity: 0.9;">Live Support</button>'
-      : "";
+    '<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: auto; opacity: 0.9; z-index: 1000;">Live Support</button>';
 
   const chatHTML = `
     <div class="chat-bar-collapsible" style="z-index: 2000000001;">
@@ -107,7 +105,9 @@ const appendChatHTML = () => {
         ${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i>
       </button>
       <div class="content chat-content" style="">
+      <div id="chat-live-support" style="display: none;">
         ${liveSupportButton}
+      </div>
         <div class="full-chat-block" style="">
           <div class="outer-container" style="">
             <div class="chat-container" style="">
@@ -131,7 +131,6 @@ const appendChatHTML = () => {
 
   document.body.insertAdjacentHTML("beforeend", chatHTML);
 };
-
 
 // Load chat script
 const loadChatScript = () => {

@@ -7,12 +7,15 @@
   </head>
   <body>
     <h1>Hello, this is my test website</h1>
+
     <script type="application/javascript">
       window.vionikoaiChat = {
         userId: "M8LwxAfm26SimGbDs4LDwf1HuCb2",
         fileName: "Resume -Tushar Damani",
-        systemPrompt: "",
-        temperature: "0.5",
+        systemPrompt: "This is example system prompt",
+        temperature: "0.7",
+        supportType: "whatsapp",
+        supportContact: "254713727575",
         name: "Name",
         email: "Email",
         phone: "Phone",
@@ -20,6 +23,7 @@
         firstMessage: "Hello",
         inputPlaceholder: "I am the fastest man alive",
         chatName: "I love coding",
+        supportOption: "",
       };
       (function (d, s, id) {
         var js,
@@ -28,7 +32,8 @@
         js = d.createElement(s);
         js.id = id;
         js.async = true;
-        js.src = "chatWidget.js";
+        js.src =
+          "chatWidget.js";
         fjs.parentNode.insertBefore(js, fjs);
       })(document, "script", "vionikoaiChat-jssdk");
     </script>

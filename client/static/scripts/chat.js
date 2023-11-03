@@ -1,3 +1,6 @@
+
+
+
 /*Context retrieval logic*/
 function cosineSimilarity(a, b) {
   const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -19,6 +22,7 @@ const createEmbeddings = async ({ token, model, input }) => {
 
   return data;
 };
+
 const getEmbeddings = async (chunks) => {
   const signature = atob(
     "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
@@ -269,6 +273,11 @@ const firstBotMessage = () => {
 
 // Function to get bot response
 const getResponse = async () => {
+  if (window.chatCount >= 3) {
+    console.log("I am now running because window.chatCount is greater than 3");
+    document.getElementById("chat-live-support").style.display !== "block" &&
+      (document.getElementById("chat-live-support").style.display = "block");
+  }
   const userText = document.getElementById("textInput").value;
   appendMessage(userText, "user");
   document.getElementById("textInput").value = "";
@@ -341,7 +350,8 @@ async function getBotResponse(input) {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
-            window.chatCount? window.chatCount++ : window.chatCount = 1;
+            window.chatCount ? window.chatCount++ : (window.chatCount = 1);
+
             // First fetch request
             fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
