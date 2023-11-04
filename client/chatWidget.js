@@ -106,7 +106,7 @@ const appendChatHTML = () => {
       </button>
       <div class="content chat-content" style="">
       <div id="chat-live-support" style="display: none;">
-        ${liveSupportButton}
+        ${window.supportType && liveSupportButton}
       </div>
         <div class="full-chat-block" style="">
           <div class="outer-container" style="">
