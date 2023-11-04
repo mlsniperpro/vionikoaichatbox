@@ -285,8 +285,9 @@ const generateResponse = async (chatElement, userMessage) => {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
+             window.chatCount ? window.chatCount++ : (window.chatCount = 1);
             console.log("I am now running the fetch");
-
+            console.log("The chat count is", window.chatCount)
             // First fetch request
             fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
@@ -373,6 +374,15 @@ const generateResponse = async (chatElement, userMessage) => {
 // ## Handle Chat
 // Function to handle chat interactions
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
+    if (window.chatCount >= 3) {
+      console.log(
+        "I am now running because window.chatCount is greater than 3"
+      );
+      document.getElementById("live-support-container").style.display !==
+        "block" &&
+        (document.getElementById("live-support-container").style.display =
+          "block");
+    }
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
   chatInput.value = "";

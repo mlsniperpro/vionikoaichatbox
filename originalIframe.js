@@ -1,10 +1,8 @@
 // Function to check if the document is ready
 function ready(callbackFunction) {
-  if (document.readyState !== "loading") {
-    callbackFunction();
-  } else {
-    document.addEventListener("DOMContentLoaded", callbackFunction);
-  }
+  document.readyState !== "loading"
+    ? callbackFunction()
+    : document.addEventListener("DOMContentLoaded", callbackFunction);
 }
 
 // Generate a random ID of 17 characters
@@ -53,11 +51,11 @@ const validateForm = (iframe) => {
     chatbot.style.display = "block";
   }
 };
-
 // Load iframe with form and chat
 function loadIframe() {
   let containerDiv = document.createElement("div");
   containerDiv.setAttribute("id", "container");
+  /*containerDiv.classList.add("closed");*/
   document.body.appendChild(containerDiv);
 
   const iDiv = document.createElement("div");
@@ -71,115 +69,63 @@ function loadIframe() {
   iframe.setAttribute("title", "Vionikaio Chat");
 
   const formFields = generateFormFields();
-  const liveSupportButtonHTML = `
-    <div id="live-support-container" class="live-support-container">
-      <button id="live-support-button" class="live-support-button">
-        Live Support
-      </button>
-      <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
-    </div>
-  `;
-
-  const srcDocContent = `
+  const srcTitle = `
   <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
     <title>Chatbot in JavaScript | CodingNepal</title>
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
-    <style>
-      .live-support-container {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        display: none;
-        z-index: 1000;
-      }
-      #live-support-button {
-        background-color: #4CAF50;
-        color: white;
-        padding: 10px 15px;
-        font-size: 16px;
-        border: none;
-        border-radius: 5px;
-        cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      }
-      #live-support-button:hover {
-        background-color: #45a049;
-      }
-      .dismiss-live-support {
-        background: none;
-        border: none;
-        color: white;
-        font-size: 20px;
-        cursor: pointer;
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        width: 30px;
-        height: 30px;
-        border-radius: 15px;
-        background-color: #555;
-        text-align: center;
-        line-height: 30px;
-      }
-      .dismiss-live-support:hover {
-        background-color: #333;
-      }
-    </style>
+    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Google Fonts Link For Icons -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
     <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
-  <button class="chatbot-toggler">
+    <button class="chatbot-toggler">
       <span class="material-symbols-rounded">mode_comment</span>
       <span class="material-symbols-outlined">close</span>
     </button>
-    <div class="chatbot-container">
-      ${liveSupportButtonHTML}
-      <div class="chatbot">
-        <header>
-          <h2>${window.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
-          <span class="close-btn material-symbols-outlined">close</span>
-        </header>
-        <ul class="chatbox">
-          <!-- Chat messages will be appended here -->
-        </ul>
-        <div class="chat-input">
-          <textarea placeholder="${
-            window.vionikoaiChat?.inputPlaceholder || "Type a message..."
-          }" spellcheck="false" required></textarea>
-          <span id="send-btn" class="material-symbols-rounded">send</span>
-        </div>
-      </div>
-      <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
-        <form id="user-form">${formFields}<input type="submit" value="${
-    window.vionikoaiChat?.submit || "Submit"
-  }"></form>
+    <div class="chatbot">
+      <header>
+        <h2>${window.vionikoaiChat?.chatName}</h2>
+        <span class="close-btn material-symbols-outlined">close</span>
+      </header>
+      <ul class="chatbox">
+        <li class="chat incoming">
+          <p>${
+            window.vionikoaiChat?.firstMessage || "How can I help you today?"
+          }</p>
+        </li>
+      </ul>
+      <div class="chat-input">
+        <textarea placeholder="${
+          window.vionikoaiChat?.inputPlaceholder ||
+          "Tap Enter to send a message"
+        }" spellcheck="false" required></textarea>
+        <span id="send-btn" class="material-symbols-rounded">send</span>
       </div>
     </div>
+   <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;"><form id="user-form">${formFields}<input type="submit" value="${
+    window.vionikoaiChat?.submit || "Submit"
+  }"></form></div>
   </body>
 </html>
   `;
 
   iDiv.appendChild(iframe);
-  iframe.srcdoc = srcDocContent;
+  iframe.srcdoc = srcTitle;
   iframe.style.width = "100%";
   iframe.style.height = "100%";
 
-  // Attach form submit event and live support button event
+  // Attach form submit event
   iframe.onload = () => {
     const doc = iframe.contentWindow.document;
     const form = doc.getElementById("user-form");
     const chatbotToggler = doc.querySelector(".chatbot-toggler");
     const formOverlay = doc.getElementById("form-overlay");
     const chatbot = doc.querySelector(".chatbot");
-    const liveSupportButton = doc.getElementById("live-support-button");
-    const dismissButton = doc.getElementById("dismiss-live-support");
-    const supportNumber = window.parent.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
 
     if (form) {
       form.addEventListener("submit", (e) => {
@@ -190,6 +136,7 @@ function loadIframe() {
 
     if (chatbotToggler) {
       chatbotToggler.addEventListener("click", () => {
+        console.log(formOverlay.style.display === "block");
         if (formOverlay.style.display === "block") {
           formOverlay.style.display = "none";
           chatbot.style.display = "none";
@@ -197,30 +144,6 @@ function loadIframe() {
           formOverlay.style.display = "block";
           chatbot.style.display = "none";
         }
-      });
-    }
-
-    if (liveSupportButton) {
-      liveSupportButton.addEventListener("click", () => {
-        if (window.parent.vionikoaiChat.supportType === "whatsapp") {
-          window.parent.open(
-            `https://api.whatsapp.com/send?phone=${supportNumber}`,
-            "_blank"
-          );
-        } else if (window.parent.vionikoaiChat.supportType === "telegram") {
-          window.parent.open(`https://t.me/${supportNumber}`, "_blank");
-        } else {
-          window.parent.open(`${supportNumber}`, "_blank");
-        }
-      });
-    }
-
-    if (dismissButton) {
-      dismissButton.addEventListener("click", () => {
-        const liveSupportContainer = doc.getElementById(
-          "live-support-container"
-        );
-        liveSupportContainer.style.display = "none";
       });
     }
   };
@@ -234,17 +157,22 @@ function initWidget() {
 
 // Initialize CSS for the widget
 function initCSSWidget() {
-  const iframeCSSLink = document.createElement("link");
-  iframeCSSLink.id = "iframeCss";
-  iframeCSSLink.rel = "stylesheet";
-  iframeCSSLink.type = "text/css";
-  iframeCSSLink.href =
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css";
-  iframeCSSLink.media = "all";
-  document.head.appendChild(iframeCSSLink);
+  document.head.appendChild(
+    Object.assign(document.createElement("link"), {
+      id: "iframeCss",
+      rel: "stylesheet",
+      type: "text/css",
+      href: "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css",
+      media: "all",
+    })
+  );
 }
 
 // Ready function to initialize widget
 ready(function () {
   initWidget();
+  console.log(document.getElementById("container"));
+  document.getElementById("container").addEventListener("click", function () {
+    console.log("click");
+  });
 });

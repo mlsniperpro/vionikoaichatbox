@@ -1,6 +1,3 @@
-
-
-
 /*Context retrieval logic*/
 function cosineSimilarity(a, b) {
   const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
@@ -350,7 +347,7 @@ async function getBotResponse(input) {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
-            window.chatCount ? window.chatCount++ : (window.chatCount = 1);
+             window.chatCount? window.chatCount++ : (window.chatCount = 1);
 
             // First fetch request
             fetch(
