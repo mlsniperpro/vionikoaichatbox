@@ -163,16 +163,20 @@ const loadScripts = () => {
 // Attach Live Support Button
 const attachLiveSupportButton = () => {
   const liveSupportButton = document.getElementById("live-support-button");
-  const supportNumber = "15035833307"; // Replace with your actual support number
+  const supportNumber = window.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
 
   liveSupportButton.addEventListener("click", () => {
-    // For WhatsApp
+    if(window.vionikoaiChat.supportType === "whatsapp"){
     window.open(
       `https://api.whatsapp.com/send?phone=${supportNumber}`,
       "_blank"
     );
-    // For Telegram, uncomment the line below
-    // window.open(`https://t.me/${supportNumber}`, "_blank");
+    } else if(window.vionikoaiChat.supportType === "telegram"){
+    
+     window.open(`https://t.me/${supportNumber}`, "_blank");
+    } else {
+      window.open(`${supportNumber}`, "_blank");
+    }
   });
 };
 
