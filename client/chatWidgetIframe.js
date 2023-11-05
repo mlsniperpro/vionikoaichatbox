@@ -74,7 +74,7 @@ function loadIframe() {
   const liveSupportButtonHTML = `
     <div id="live-support-container" class="live-support-container">
       <button id="live-support-button" class="live-support-button">
-        Live Support
+        ${window?.parent?.vionikoaiChat?.supportLabel || 'Live Support'}
       </button>
       <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
     </div>
