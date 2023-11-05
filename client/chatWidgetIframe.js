@@ -139,7 +139,7 @@ function loadIframe() {
       <span class="material-symbols-outlined">close</span>
     </button>
     <div class="chatbot-container">
-      ${liveSupportButtonHTML}
+      ${window.supportType && liveSupportButtonHTML}
       <div class="chatbot">
         <header>
           <h2>${window.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
