@@ -19,7 +19,7 @@ const generateRandomId = () => {
 
 // Generate form fields based on window.vionikoaiChat properties
 const generateFormFields = () => {
-  const chatProps = window.vionikoaiChat || {};
+  const chatProps = window.parent.vionikoaiChat || {};
   return ["name", "email", "phone"]
     .map((field) => {
       const label = chatProps[field]
@@ -41,8 +41,8 @@ const validateForm = (iframe) => {
   const email = doc.getElementById("email")?.value;
   const phone = doc.getElementById("phone")?.value;
   if (name && email && phone) {
-    window.vionikoaiChat = {
-      ...window.vionikoaiChat,
+    window.parent.vionikoaiChat = {
+      ...window.parent.vionikoaiChat,
       chatId: generateRandomId(),
       name,
       email,
@@ -139,10 +139,10 @@ function loadIframe() {
       <span class="material-symbols-outlined">close</span>
     </button>
     <div class="chatbot-container">
-      ${window.supportType && liveSupportButtonHTML}
+      ${window.parent.vionikoaiChat.supportType && liveSupportButtonHTML}
       <div class="chatbot">
         <header>
-          <h2>${window.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
+          <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
           <span class="close-btn material-symbols-outlined">close</span>
         </header>
         <ul class="chatbox">
@@ -150,14 +150,14 @@ function loadIframe() {
         </ul>
         <div class="chat-input">
           <textarea placeholder="${
-            window.vionikoaiChat?.inputPlaceholder || "Type a message..."
+            window.parent.vionikoaiChat?.inputPlaceholder || "Type a message..."
           }" spellcheck="false" required></textarea>
           <span id="send-btn" class="material-symbols-rounded">send</span>
         </div>
       </div>
       <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
         <form id="user-form">${formFields}<input type="submit" value="${
-    window.vionikoaiChat?.submit || "Submit"
+    window.parent.vionikoaiChat?.submit || "Submit"
   }"></form>
       </div>
     </div>
