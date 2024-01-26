@@ -22,7 +22,7 @@ const createEmbeddings = async ({ token, model, input }) => {
 
 const getEmbeddings = async (chunks) => {
   const signature = atob(
-    "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
+    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
   )
     .split("")
     .reverse()
@@ -192,7 +192,7 @@ const sanitizeHTML = (str) => {
 };
 const fetchResponse = async (chat, userId) => {
   const signature = atob(
-    "MEdmck9NOFlxUGRkWklPa2YzSWdKRmtibEIzVHpxTkJha0Z5R2VoNTdrazlBSzlqLWtz"
+    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
   )
     .split("")
     .reverse()
