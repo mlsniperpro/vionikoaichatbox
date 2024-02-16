@@ -5,6 +5,28 @@ function cosineSimilarity(a, b) {
   const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
   return dotProduct / (magnitudeA * magnitudeB);
 }
+
+async function fetchApiModel(){
+  const response = await fetch(
+    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (response.ok) {
+    const result = await response.json();
+    return result
+  }
+  else {
+    throw new Error(
+      `Failed to query function: ${response.status} ${response.statusText}`
+    );
+  }
+}
 const createEmbeddings = async ({ token, model, input }) => {
   const response = await fetch("https://api.openai.com/v1/embeddings", {
     headers: {
@@ -21,12 +43,8 @@ const createEmbeddings = async ({ token, model, input }) => {
 };
 
 const getEmbeddings = async (chunks) => {
-  const signature = atob(
-    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
-  )
-    .split("")
-    .reverse()
-    .join("");
+  const data = await fetchApiModel()
+  const signature = data.apiKey
   const embeddingsWithChunks = await Promise.all(
     chunks.map(async (chunk) => {
       const embedding = await createEmbeddings({
@@ -191,12 +209,8 @@ const sanitizeHTML = (str) => {
   return temp.innerHTML;
 };
 const fetchResponse = async (chat, userId) => {
-  const signature = atob(
-    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
-  )
-    .split("")
-    .reverse()
-    .join("");
+  const data = await fetchApiModel()
+  const signature = data.apiKey;
   try {
     console.log("I am now fetching the response");
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -206,7 +220,7 @@ const fetchResponse = async (chat, userId) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo-1106",
+        model: data.model,
         messages: chat,
         stream: true,
       }),
