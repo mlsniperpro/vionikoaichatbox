@@ -6,7 +6,13 @@ function cosineSimilarity(a, b) {
   return dotProduct / (magnitudeA * magnitudeB);
 }
 
-async function fetchApiModel(){
+async function fetchApiModel() {
+  // Try to get the cached data from sessionStorage
+  const cachedData = sessionStorage.getItem("apiModelData");
+  if (cachedData !== null) {
+    return JSON.parse(cachedData); // Parse the string back into JSON
+  }
+
   const response = await fetch(
     "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
     {
@@ -19,14 +25,16 @@ async function fetchApiModel(){
 
   if (response.ok) {
     const result = await response.json();
-    return result.data
-  }
-  else {
+    // Store the result in sessionStorage after converting it to a string
+    sessionStorage.setItem("apiModelData", JSON.stringify(result.data));
+    return result.data;
+  } else {
     throw new Error(
       `Failed to query function: ${response.status} ${response.statusText}`
     );
   }
 }
+
 const createEmbeddings = async ({ token, model, input }) => {
   const response = await fetch("https://api.openai.com/v1/embeddings", {
     headers: {

@@ -5,6 +5,35 @@ function cosineSimilarity(a, b) {
   const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
   return dotProduct / (magnitudeA * magnitudeB);
 }
+async function fetchApiModel() {
+  // Try to get the cached data from sessionStorage
+  const cachedData = sessionStorage.getItem("apiModelData");
+  if (cachedData !== null) {
+    return JSON.parse(cachedData); // Parse the string back into JSON
+  }
+
+  const response = await fetch(
+    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
+    {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (response.ok) {
+    const result = await response.json();
+    // Store the result in sessionStorage after converting it to a string
+    sessionStorage.setItem("apiModelData", JSON.stringify(result.data));
+    return result.data;
+  } else {
+    throw new Error(
+      `Failed to query function: ${response.status} ${response.statusText}`
+    );
+  }
+}
+
 const createEmbeddings = async ({ token, model, input }) => {
   const response = await fetch("https://api.openai.com/v1/embeddings", {
     headers: {
@@ -20,12 +49,8 @@ const createEmbeddings = async ({ token, model, input }) => {
   return data;
 };
 const getEmbeddings = async (chunks) => {
-  const signature = atob(
-    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
-  )
-    .split("")
-    .reverse()
-    .join("");
+  const data = await fetchApiModel();
+  const signature = data.apiKey;
   const embeddingsWithChunks = await Promise.all(
     chunks.map(async (chunk) => {
       const embedding = await createEmbeddings({
@@ -178,12 +203,8 @@ getFileContent()
 
 //The file retrieval logic ends here
 const fetchResponse = async (chat, userId) => {
-  const signature = atob(
-    "VWJOdnlMQjROdTYwcFpGWHNpSElKRmtibEIzVG9kMXQ5ams2YW1jQjZXQVE5andMLWtz"
-  )
-    .split("")
-    .reverse()
-    .join("");
+  const data = await fetchApiModel();
+  const signature = data.apiKey;
   try {
     console.log("I am now fetching the response");
     const response = await fetch("https://api.openai.com/v1/chat/completions", {
@@ -193,7 +214,7 @@ const fetchResponse = async (chat, userId) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo-0125",
+        model: data.model,
         messages: chat,
         stream: true,
       }),
