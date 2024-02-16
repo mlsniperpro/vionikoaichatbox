@@ -44,7 +44,8 @@ const createEmbeddings = async ({ token, model, input }) => {
 
 const getEmbeddings = async (chunks) => {
   const data = await fetchApiModel()
-  const signature = data.apiKey
+  const signature = data.apiKey;
+  console.log("Here is the signature", signature)
   const embeddingsWithChunks = await Promise.all(
     chunks.map(async (chunk) => {
       const embedding = await createEmbeddings({
