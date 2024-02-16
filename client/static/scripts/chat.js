@@ -19,7 +19,7 @@ async function fetchApiModel(){
 
   if (response.ok) {
     const result = await response.json();
-    return result
+    return result.data
   }
   else {
     throw new Error(
