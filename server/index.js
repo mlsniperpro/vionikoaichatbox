@@ -54,7 +54,7 @@ app.post('/openChat', async (req, res) => {
   // Make API Request to OpenAI
   try {
     const response = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
+      model: "gpt-4o-mini",
       stream: true,
       messages: messages,
       max_tokens: 500,
