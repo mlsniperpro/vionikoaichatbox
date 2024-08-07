@@ -143,7 +143,7 @@ app.post("/fetchOpenAI", async (req, res) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-3.5-turbo-16k",
+        model: "gpt-4o-mini",
         messages: concatenatedMessages,
         temperature: Number(json.temperature) || 0.7,
         stream: true,
@@ -254,7 +254,7 @@ app.post("/fetchOpenAINoStream", async (req, res) => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "gpt-3.5-turbo-16k",
+          model: "gp-4o-mini",
           messages: concatenatedMessages,
           temperature:  Number(temperature) || 0.7,
         }),
