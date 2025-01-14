@@ -223,28 +223,43 @@
 
 /*The loader */
 .loader {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
+  width: 30px;
+  height: 30px;
   display: inline-block;
   position: relative;
-  background: linear-gradient(0deg, rgba(114, 74, 232, 0.2) 33%, #724ae8 100%);
-  box-sizing: border-box;
-  animation: rotation 1s linear infinite;
+  border: 2px solid transparent;
+  border-top-color: #724ae8;
+  border-radius: 50%;
+  animation: spin 0.8s ease infinite;
 }
+
+.loader::before,
 .loader::after {
   content: "";
-  box-sizing: border-box;
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 44px;
-  height: 44px;
+  border: 2px solid transparent;
   border-radius: 50%;
-  background: #263238;
 }
-@keyframes rotation {
+
+.loader::before {
+  top: 2px;
+  right: 2px;
+  bottom: 2px;
+  left: 2px;
+  border-top-color: rgba(114, 74, 232, 0.6);
+  animation: spin 0.6s linear infinite;
+}
+
+.loader::after {
+  top: 6px;
+  right: 6px;
+  bottom: 6px;
+  left: 6px;
+  border-top-color: rgba(114, 74, 232, 0.3);
+  animation: spin 0.4s linear infinite;
+}
+
+@keyframes spin {
   0% {
     transform: rotate(0deg);
   }

@@ -85,8 +85,8 @@ function loadIframe() {
   <head>
     <meta charset="utf-8">
     <title>Chatbot in JavaScript | CodingNepal</title>
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
-    <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
+    <link rel="stylesheet" href="static/css/style.css">
+    <link rel="stylesheet" href="static/css/form.css">
     <style>
       /* Import Google font - Poppins */
       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
@@ -266,7 +266,7 @@ function initCSSWidget() {
   iframeCSSLink.rel = "stylesheet";
   iframeCSSLink.type = "text/css";
   iframeCSSLink.href =
-    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/iframe.css";
+    "static/css/iframe.css";
   iframeCSSLink.media = "all";
   document.head.appendChild(iframeCSSLink);
 }
