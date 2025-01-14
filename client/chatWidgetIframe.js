@@ -74,7 +74,7 @@ function loadIframe() {
   const liveSupportButtonHTML = `
     <div id="live-support-container" class="live-support-container">
       <button id="live-support-button" class="live-support-button">
-        ${window?.parent?.vionikoaiChat?.supportLabel || 'Live Support'}
+        ${window?.parent?.vionikoaiChat?.supportLabel || "Live Support"}
       </button>
       <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
     </div>
@@ -88,44 +88,64 @@ function loadIframe() {
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
     <style>
+      /* Import Google font - Poppins */
+      @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap');
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: "Poppins", sans-serif;
+      }
+
       .live-support-container {
         position: fixed;
         bottom: 20px;
         right: 20px;
         display: none;
         z-index: 1000;
+        font-family: "Poppins", sans-serif;
       }
+
       #live-support-button {
-        background-color: #4CAF50;
+        background-color: #724ae8;
         color: white;
-        padding: 10px 15px;
-        font-size: 16px;
+        padding: 12px 24px;
+        font-size: 0.95rem;
         border: none;
-        border-radius: 5px;
+        border-radius: 12px;
         cursor: pointer;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        font-weight: 500;
+        box-shadow: 0 0 128px 0 rgba(0,0,0,0.1),
+                    0 32px 64px -48px rgba(0,0,0,0.5);
+        transition: transform 0.2s ease, background-color 0.2s ease;
       }
+
       #live-support-button:hover {
-        background-color: #45a049;
+        background-color: #5f3cc6;
+        transform: translateY(-2px);
       }
+
       .dismiss-live-support {
-        background: none;
+        background: #724ae8;
         border: none;
         color: white;
-        font-size: 20px;
+        font-size: 18px;
         cursor: pointer;
         position: absolute;
         top: -10px;
         right: -10px;
-        width: 30px;
-        height: 30px;
-        border-radius: 15px;
-        background-color: #555;
+        width: 24px;
+        height: 24px;
+        border-radius: 12px;
         text-align: center;
-        line-height: 30px;
+        line-height: 24px;
+        transition: background-color 0.2s ease;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
       }
+
       .dismiss-live-support:hover {
-        background-color: #333;
+        background-color: #5f3cc6;
       }
     </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -143,16 +163,22 @@ function loadIframe() {
       <div class="chatbot">
         <header>
           <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
-          <span class="close-btn material-symbols-outlined">close</span>
+          <span class="close-btn material-symbols-outlined" style="cursor: pointer; transition: opacity 0.2s ease;">close</span>
         </header>
         <ul class="chatbox">
           <!-- Chat messages will be appended here -->
         </ul>
         <div class="chat-input">
-          <textarea placeholder="${
-            window.parent.vionikoaiChat?.inputPlaceholder || "Type a message..."
-          }" spellcheck="false" required></textarea>
-          <span id="send-btn" class="material-symbols-rounded">send</span>
+          <textarea 
+            placeholder="${
+              window.parent.vionikoaiChat?.inputPlaceholder ||
+              "Type a message..."
+            }" 
+            spellcheck="false" 
+            required
+            style="font-family: 'Poppins', sans-serif; font-size: 0.95rem;"
+          ></textarea>
+          <span id="send-btn" class="material-symbols-rounded" style="color: #724ae8; transition: transform 0.2s ease;">send</span>
         </div>
       </div>
       <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
@@ -179,7 +205,8 @@ function loadIframe() {
     const chatbot = doc.querySelector(".chatbot");
     const liveSupportButton = doc.getElementById("live-support-button");
     const dismissButton = doc.getElementById("dismiss-live-support");
-    const supportNumber = window.parent.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
+    const supportNumber =
+      window.parent.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
 
     if (form) {
       form.addEventListener("submit", (e) => {

@@ -96,32 +96,45 @@ const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const liveSupportButton =
-    `<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #4CAF50; color: white; padding: 14px 20px; margin: 8px 0; border: none; cursor: pointer; width: auto; opacity: 0.9; z-index: 1000;">${window.vionikoaiChat.supportLabel || "Live Support"}</button>`;
+  const liveSupportButton = `<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #724ae8; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease; z-index: 1000;">
+      ${window.vionikoaiChat.supportLabel || "Live Support"}
+    </button>`;
 
   const chatHTML = `
-    <div class="chat-bar-collapsible" style="z-index: 2000000001;">
-      <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat" style="">
-        ${chatName}<i class="fa fa-fw fa-comments-o chat-icon"></i>
+    <div class="chat-bar-collapsible">
+      <button id="chat-button" type="button" class="collapsible chat-button" aria-label="Open chat">
+        <span style="font-family: 'Poppins', sans-serif; font-weight: 500;">${chatName}</span>
+        <i class="fa fa-fw fa-comments-o chat-icon" style="margin-left: 8px;"></i>
       </button>
-      <div class="content chat-content" style="">
-      <div id="chat-live-support" style="display: none;">
-        ${window.vionikoaiChat.supportType && liveSupportButton}
-      </div>
-        <div class="full-chat-block" style="">
-          <div class="outer-container" style="">
-            <div class="chat-container" style="">
-              <div id="chatbox" class="chatbox" style="">
-                <h5 id="chat-timestamp" class="chat-timestamp" style=""></h5>
-                <p id="botStarterMessage" class="botText chat-bot-message" style=""><span>Loading...</span></p>
+      <div class="content chat-content">
+        <div id="chat-live-support" style="display: none;">
+          ${window.vionikoaiChat.supportType && liveSupportButton}
+        </div>
+        <div class="full-chat-block">
+          <div class="outer-container">
+            <div class="chat-container">
+              <div id="chatbox" class="chatbox">
+                <h5 id="chat-timestamp" class="chat-timestamp"></h5>
+                <p id="botStarterMessage" class="botText chat-bot-message">
+                  <span style="font-family: 'Poppins', sans-serif;">Loading...</span>
+                </p>
               </div>
-              <div class="chat-bar-input-block" style="">
-                <div id="userInput" class="user-input" style="">
-                  <input id="textInput" class="input-box chat-input-box" type="text" name="msg" placeholder="${inputPlaceholder}" style="" />
+              <div class="chat-bar-input-block">
+                <div id="userInput" class="user-input">
+                  <input 
+                    id="textInput" 
+                    class="input-box chat-input-box" 
+                    type="text" 
+                    name="msg" 
+                    placeholder="${inputPlaceholder}"
+                    style="font-family: 'Poppins', sans-serif; font-size: 0.95rem; transition: background-color 0.2s ease;"
+                  />
                 </div>
               </div>
-              <div id="chat-bar-bottom" style=""></div>
-              <div class="branding" style="">Powered by Vioniko</div>
+              <div id="chat-bar-bottom"></div>
+              <div class="branding" style="font-family: 'Poppins', sans-serif; font-size: 0.8rem; color: #666; padding: 8px; text-align: center; border-top: 1px solid #eee;">
+                Powered by Vioniko
+              </div>
             </div>
           </div>
         </div>
@@ -166,14 +179,13 @@ const attachLiveSupportButton = () => {
   const supportNumber = window.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
 
   liveSupportButton.addEventListener("click", () => {
-    if(window.vionikoaiChat.supportType === "whatsapp"){
-    window.open(
-      `https://api.whatsapp.com/send?phone=${supportNumber}`,
-      "_blank"
-    );
-    } else if(window.vionikoaiChat.supportType === "telegram"){
-    
-     window.open(`https://t.me/${supportNumber}`, "_blank");
+    if (window.vionikoaiChat.supportType === "whatsapp") {
+      window.open(
+        `https://api.whatsapp.com/send?phone=${supportNumber}`,
+        "_blank"
+      );
+    } else if (window.vionikoaiChat.supportType === "telegram") {
+      window.open(`https://t.me/${supportNumber}`, "_blank");
     } else {
       window.open(`${supportNumber}`, "_blank");
     }
