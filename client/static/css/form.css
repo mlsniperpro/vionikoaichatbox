@@ -1,3 +1,6 @@
+/* Import Google font - Poppins */
+@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+
 /* Style for the form overlay */
 .form-overlay {
   position: relative; /* I change from absolute to relative when I had Iframe issues */
@@ -6,7 +9,6 @@
   width: 100%;
   bottom: 30px;
   height: 100%;
- /* background-color: rgba(0, 0, 0, 0.8);*/
   display: flex;
   justify-content: center;
   align-items: center;
@@ -16,49 +18,72 @@
 /* Style for the form */
 #user-form {
   background-color: #fff;
-  padding: 20px;
-  border-radius: 8px;
+  padding: 25px;
+  border-radius: 15px;
   width: 80%;
   max-width: 400px;
   text-align: center;
+  font-family: "Poppins", sans-serif;
+  box-shadow: 0 0 128px 0 rgba(0, 0, 0, 0.1),
+    0 32px 64px -48px rgba(0, 0, 0, 0.5);
 }
 
 /* Style for the labels */
 #user-form label {
   display: block;
-  margin-bottom: 8px;
-  font-weight: bold;
+  margin-bottom: 10px;
+  font-weight: 500;
+  color: #333;
 }
 
 /* Style for the input fields */
 #user-form input {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
   margin-bottom: 20px;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  border: none;
+  border-radius: 12px;
+  background-color: #f2f2f2;
+  font-family: "Poppins", sans-serif;
+  font-size: 0.95rem;
+  transition: all 0.2s ease;
+}
+
+#user-form input:focus {
+  outline: none;
+  background-color: #fff;
+  box-shadow: 0 0 0 2px rgba(114, 74, 232, 0.2);
 }
 
 /* Style for the submit button */
 #user-form input[type="submit"] {
-  background-color: #007bff;
+  background-color: #724ae8;
   color: white;
   border: none;
   cursor: pointer;
-  padding: 12px 20px;
-  border-radius: 4px;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 500;
+  transition: background-color 0.2s ease;
+}
+
+#user-form input[type="submit"]:hover {
+  background-color: #5f3cc6;
 }
 
 /* Media query for responsiveness */
 @media (max-width: 768px) {
   #user-form {
     width: 90%; /* Increase width for smaller screens */
+    padding: 20px;
   }
   #user-form input,
   #user-form label {
     font-size: 16px; /* Increase font size for better readability */
   }
   #user-form input[type="submit"] {
+    width: auto;
+    min-width: 150px;
     padding: 16px 24px; /* Increase padding for better touch area */
   }
 }
