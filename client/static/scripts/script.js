@@ -157,7 +157,7 @@ const saveChatMessage = async (message, role) => {
       return true;
     }
 
-    console.log("Starting API request to save message...");
+    console.log("Starting API request to save message..., ", );
     const response = await fetch(
       "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
       {
