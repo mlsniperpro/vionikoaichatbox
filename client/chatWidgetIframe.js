@@ -19,17 +19,17 @@ const generateRandomId = () => {
 
 // Generate form fields based on window.vionikoaiChat properties
 const generateFormFields = () => {
-  const chatProps = window.parent.vionikoaiChat || {};
+  const chatProps = window?.parent?.vionikoaiChat || {};
   return ["name", "email", "phone"]
     .map((field) => {
-      const label = chatProps[field]
-        ? chatProps[field]
-        : field.charAt(0).toUpperCase() + field.slice(1);
-      return chatProps[field]
-        ? `<label for="${field}">${label}:</label><input type="${
-            field === "email" ? "email" : "text"
-          }" id="${field}" name="${field}" required>`
-        : "";
+      // Only generate field if it's explicitly set in chatProps or if no fields are set at all
+      const shouldShowField = chatProps[field] !== undefined || Object.keys(chatProps).length === 0;
+      if (!shouldShowField) return "";
+      
+      const label = chatProps[field] || field.charAt(0).toUpperCase() + field.slice(1);
+      return `<label for="${field}">${label}:</label><input type="${
+        field === "email" ? "email" : "text"
+      }" id="${field}" name="${field}" required>`;
     })
     .join("");
 };
@@ -71,14 +71,15 @@ function loadIframe() {
   iframe.setAttribute("title", "Vionikaio Chat");
 
   const formFields = generateFormFields();
-  const liveSupportButtonHTML = `
+  // Only generate support button HTML if support type is configured
+  const liveSupportButtonHTML = window?.parent?.vionikoaiChat?.supportType ? `
     <div id="live-support-container" class="live-support-container">
       <button id="live-support-button" class="live-support-button">
         ${window?.parent?.vionikoaiChat?.supportLabel || "Live Support"}
       </button>
       <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
     </div>
-  `;
+  ` : '';
 
   const srcDocContent = `
   <html lang="en" dir="ltr">
@@ -158,11 +159,11 @@ function loadIframe() {
       <span class="material-symbols-rounded">mode_comment</span>
       <span class="material-symbols-outlined">close</span>
     </button>
-    <div class="chatbot-container">
-      ${window.parent.vionikoaiChat.supportType && liveSupportButtonHTML}
+      <div class="chatbot-container">
+      ${liveSupportButtonHTML}
       <div class="chatbot">
         <header>
-          <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
+          <h2>${window?.parent?.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
           <span class="close-btn material-symbols-outlined" style="cursor: pointer; transition: opacity 0.2s ease;">close</span>
         </header>
         <ul class="chatbox">
@@ -171,7 +172,7 @@ function loadIframe() {
         <div class="chat-input">
           <textarea 
             placeholder="${
-              window.parent.vionikoaiChat?.inputPlaceholder ||
+              window?.parent?.vionikoaiChat?.inputPlaceholder ||
               "Type a message..."
             }" 
             spellcheck="false" 
@@ -183,7 +184,7 @@ function loadIframe() {
       </div>
       <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
         <form id="user-form">${formFields}<input type="submit" value="${
-    window.parent.vionikoaiChat?.submit || "Submit"
+    window?.parent?.vionikoaiChat?.submit || "Submit"
   }"></form>
       </div>
     </div>
@@ -206,7 +207,7 @@ function loadIframe() {
     const liveSupportButton = doc.getElementById("live-support-button");
     const dismissButton = doc.getElementById("dismiss-live-support");
     const supportNumber =
-      window.parent.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
+      window?.parent?.vionikoaiChat?.supportContact || "15035833307"; // Replace with your actual support number
 
     if (form) {
       form.addEventListener("submit", (e) => {
@@ -229,12 +230,12 @@ function loadIframe() {
 
     if (liveSupportButton) {
       liveSupportButton.addEventListener("click", () => {
-        if (window.parent.vionikoaiChat.supportType === "whatsapp") {
+        if (window?.parent?.vionikoaiChat?.supportType === "whatsapp") {
           window.parent.open(
             `https://api.whatsapp.com/send?phone=${supportNumber}`,
             "_blank"
           );
-        } else if (window.parent.vionikoaiChat.supportType === "telegram") {
+        } else if (window?.parent?.vionikoaiChat?.supportType === "telegram") {
           window.parent.open(`https://t.me/${supportNumber}`, "_blank");
         } else {
           window.parent.open(`${supportNumber}`, "_blank");
