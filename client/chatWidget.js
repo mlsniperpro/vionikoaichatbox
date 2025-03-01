@@ -149,7 +149,7 @@ const appendChatHTML = () => {
 const loadChatScript = () => {
   const chatScript = document.createElement("script");
   chatScript.src =
-    "static/scripts/chat.js";
+    "https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/chat.js";
   chatScript.async = true;
   document.body.appendChild(chatScript);
 };
@@ -177,7 +177,7 @@ const loadScripts = () => {
 const attachLiveSupportButton = () => {
   const liveSupportButton = document.getElementById("live-support-button");
   if (!liveSupportButton) return;
-  
+
   const supportNumber = window.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
 
   liveSupportButton.addEventListener("click", () => {
