@@ -105,12 +105,13 @@ const fetchResponse = async (chat, userId) => {
 };
 // ## Initialization
 const chatbotToggler = document.querySelector(".chatbot-toggler");
-const previousMessages = [
-  {
-    role: "system",
-    content: window.parent.vionikoaiChat?.systemPrompt || "",
-  },
-];
+
+// Initialize messages array with just the system prompt
+const previousMessages = [{
+  role: "system",
+  content: window.parent.vionikoaiChat?.systemPrompt || "",
+}];
+
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
 const chatInput = document.querySelector(".chat-input textarea");
@@ -156,8 +157,9 @@ const generateResponse = async (chatElement, userMessage) => {
       query: userMessage,
     });
 
-    // Combine the context from similar documents
-    const context = similarDocs.map((doc) => doc.content).join("\n");
+    // Store only unique and relevant context pieces
+    const uniqueContexts = new Set(similarDocs.map(doc => doc.content));
+    const context = Array.from(uniqueContexts).join("\n");
 
     const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
     ----------------
@@ -250,14 +252,10 @@ const generateResponse = async (chatElement, userMessage) => {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
   } finally {
-    previousMessages.push({
-      role: "user",
-      content: userMessage,
-    });
-    previousMessages.push({
-      role: "assistant",
-      content: messageElement.textContent,
-    });
+    previousMessages.push(
+      { role: "user", content: userMessage },
+      { role: "assistant", content: messageElement.textContent }
+    );
     chatElement.classList.remove("loader");
   }
 };

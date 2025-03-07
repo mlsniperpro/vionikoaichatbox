@@ -1,10 +1,4 @@
 async function fetchApiModel() {
-  // Try to get the cached data from sessionStorage
-  const cachedData = sessionStorage.getItem("apiModelData");
-  if (cachedData !== null) {
-    return JSON.parse(cachedData);
-  }
-
   const response = await fetch(
     "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
     {
@@ -17,7 +11,6 @@ async function fetchApiModel() {
 
   if (response.ok) {
     const result = await response.json();
-    sessionStorage.setItem("apiModelData", JSON.stringify(result.data));
     return result.data;
   } else {
     throw new Error(
@@ -97,12 +90,11 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
   }));
 }
 
-const previousMessages = [
-  {
-    role: "system",
-    content: window.vionikoaiChat?.systemPrompt || "",
-  },
-];
+// Initialize messages array with just the system prompt
+const previousMessages = [{
+  role: "system",
+  content: window.vionikoaiChat?.systemPrompt || "",
+}];
 
 // Function to append messages to the chatbox
 const appendMessage = (message, type) => {
@@ -197,7 +189,9 @@ async function getBotResponse(input) {
       query: input,
     });
 
-    const context = similarDocs.map((doc) => doc.content).join("\n");
+    // Store only unique and relevant context pieces
+    const uniqueContexts = new Set(similarDocs.map(doc => doc.content));
+    const context = Array.from(uniqueContexts).join("\n");
     currentMessageElement.classList.remove("loader");
 
     const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
@@ -299,14 +293,8 @@ async function getBotResponse(input) {
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   } finally {
     previousMessages.push(
-      {
-        role: "user",
-        content: input,
-      },
-      {
-        role: "assistant",
-        content: currentMessageElement.querySelector("span").textContent,
-      }
+      { role: "user", content: input },
+      { role: "assistant", content: currentMessageElement.querySelector("span").textContent }
     );
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
