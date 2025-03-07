@@ -33,7 +33,7 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
       //filter: `conversationId == "${conversationId}"`,  // Add explicit filter expression
       queryVector: embeddingVector,
       conversationId: conversationId,
-      limit: 10,
+      limit: 22,
     }),
   });
 

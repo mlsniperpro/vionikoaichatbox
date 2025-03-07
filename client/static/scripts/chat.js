@@ -86,7 +86,7 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
       collection_name: "chat",
       queryVector: embeddingVector,
       conversationId: conversationId,
-      limit: 10,
+      limit: 22,
     }),
   });
 
