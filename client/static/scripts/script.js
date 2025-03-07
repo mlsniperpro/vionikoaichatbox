@@ -265,10 +265,18 @@ const generateResponse = async (chatElement, userMessage) => {
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
   if (window.chatCount >= 3) {
     console.log("I am now running because window.chatCount is greater than 3");
-    document.getElementById("live-support-container").style.display !==
-      "block" &&
-      (document.getElementById("live-support-container").style.display =
-        "block");
+    // Access live-support-container within the iframe context
+    const iframe = window.parent.document.querySelector("#vionikodiv iframe");
+    try {
+      if (iframe && iframe.contentWindow && !iframe.contentWindow.closed) {
+        const liveSupportContainer = iframe.contentWindow.document.getElementById("live-support-container");
+        if (liveSupportContainer && window.parent.vionikoaiChat?.supportType) {
+          liveSupportContainer.style.display = "block";
+        }
+      }
+    } catch (e) {
+      console.log("Could not access iframe content - it may not be loaded yet");
+    }
   }
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
