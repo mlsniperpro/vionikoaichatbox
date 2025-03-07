@@ -1,9 +1,49 @@
-/*Context retrieval logic*/
-function cosineSimilarity(a, b) {
-  const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
-  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
+async function performSimilaritySearchOnDocument({ conversationId, query }) {
+  const API_URL = "https://vector-databases.fly.dev";
+  console.log("Starting similarity search with:", { conversationId, query });
+
+  // Create embedding using fetch (already using fetch)
+  const embeddingsResponse = await fetch(
+    "https://llm-functionalities.fly.dev/create-embedding",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: query,
+        model: "text-embedding-3-large",
+      }),
+    }
+  );
+
+  const embeddingsData = await embeddingsResponse.json();
+  const embeddingVector = embeddingsData.embedding;
+  console.log("Generated embedding vector length:", embeddingVector.length);
+
+  // Replace axios call with fetch for Zilliz search
+  console.log("Making Zilliz search request...");
+  const response = await fetch(`${API_URL}/zilliz/search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      collection_name: "chat",
+      //filter: `conversationId == "${conversationId}"`,  // Add explicit filter expression
+      queryVector: embeddingVector,
+      conversationId: conversationId,
+      limit: 10,
+    }),
+  });
+
+  const responseData = await response.json();
+  //console.log("Zilliz search response:", responseData);
+
+  return responseData.data.map((item) => ({
+    content: item.content,
+    pageNumber: item.pageNumber,
+  }));
 }
 async function fetchApiModel() {
   // Try to get the cached data from sessionStorage
@@ -33,173 +73,6 @@ async function fetchApiModel() {
     );
   }
 }
-
-const createEmbeddings = async ({ token, model, input }) => {
-  const response = await fetch("https://api.openai.com/v1/embeddings", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    method: "POST",
-    body: JSON.stringify({ input, model }),
-  });
-
-  const { error, data, usage } = await response.json();
-
-  return data;
-};
-const getEmbeddings = async (chunks) => {
-  const data = await fetchApiModel();
-  const signature = data.apiKey;
-  const embeddingsWithChunks = await Promise.all(
-    chunks.map(async (chunk) => {
-      const embedding = await createEmbeddings({
-        token: signature,
-        model: "text-embedding-ada-002",
-        input: chunk,
-      });
-
-      return { chunk, embedding };
-    })
-  );
-  return embeddingsWithChunks;
-};
-
-function getSimilarity(embeddingsWithChunks, query_embedding) {
-  const similarities = embeddingsWithChunks.map(({ embedding }, index) => {
-    // Access the embedding data from embeddingsWithChunks
-    const embeddingData = embedding[0].embedding;
-    try {
-      return cosineSimilarity(embeddingData, query_embedding);
-    } catch (error) {
-      console.error(`Error processing embedding #${index + 1}:`, error.message);
-      return null;
-    }
-  });
-  return similarities;
-}
-
-function getSimilarDocs(similarities, docs) {
-  const similarDocs = similarities.map((similarity, index) => {
-    return {
-      similarity: similarity,
-      doc: docs[index],
-    };
-  });
-  return similarDocs;
-}
-
-function sortSimilarDocs(similarDocs, numDocs) {
-  const sortedSimilarDocs = similarDocs.sort(
-    (a, b) => b.similarity - a.similarity
-  );
-  return sortedSimilarDocs.slice(0, numDocs); // Return only the specified number of documents
-}
-
-const getSimilarDocsFromChunks = async (
-  embeddingsWithChunks,
-  query,
-  numDocs
-) => {
-  const [query_embedding_obj] = await getEmbeddings([query]);
-  const query_embedding = query_embedding_obj.embedding[0].embedding;
-  const similarities = getSimilarity(embeddingsWithChunks, query_embedding);
-  const chunks = embeddingsWithChunks.map(({ chunk }) => chunk);
-  const similarDocs = getSimilarDocs(similarities, chunks);
-  const sortedSimilarDocs = sortSimilarDocs(similarDocs, numDocs);
-  return sortedSimilarDocs;
-};
-const contextRetriever = async (embeddingData, input) => {
-  let texts;
-  const docs = await getSimilarDocsFromChunks(embeddingData, input, 4);
-  texts = docs.map((doc) => doc.doc);
-  texts = texts.join(" ");
-  return texts;
-};
-
-/*Context retrieval logic ends here*/
-
-//The file retrieval logic
-let fileContentInRam = null;
-
-async function cacheFileContent(content) {
-  console.log("I am now caching the file content");
-  const cache = await caches.open("fileContentCache");
-  const request = new Request("fileContentKey");
-  const response = new Response(JSON.stringify(content));
-  await cache.put(request, response);
-}
-
-async function getCachedFileContent() {
-  console.log("I am now getting the cached file content");
-  const cache = await caches.open("fileContentCache");
-  const response = await cache.match("fileContentKey");
-  if (response) {
-    const content = await response.json();
-    return content;
-  }
-  return null;
-}
-
-async function queryFirebaseFunction() {
-  console.log("I am now querying the firebase function");
-  const data = {
-    userId: window.parent.vionikoaiChat?.userId,
-    fileName: window.parent.vionikoaiChat?.fileName,
-  };
-
-  const response = await fetch(
-    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getFileContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (response.ok) {
-    const result = await response.json();
-    return result.fileContent;
-  } else {
-    throw new Error(
-      `Failed to query function: ${response.status} ${response.statusText}`
-    );
-  }
-}
-
-async function getFileContent() {
-  console.log("I am now getting the file content");
-  // Try getting content from RAM
-  if (fileContentInRam) {
-    console.log("I retrived the content from the RAM");
-    return fileContentInRam;
-  }
-
-  // Try getting content from Cache
-  const cachedContent = await getCachedFileContent();
-  if (cachedContent) {
-    fileContentInRam = cachedContent;
-    return cachedContent;
-  }
-
-  // Fetch content from server
-  const fetchedContent = await queryFirebaseFunction();
-
-  // Store in both RAM and Cache
-  fileContentInRam = fetchedContent;
-  await cacheFileContent(fetchedContent);
-
-  return fetchedContent;
-}
-getFileContent()
-  .then((content) => {
-    console.log("File content:", content);
-  })
-  .catch((error) => {
-    console.error("An error occurred:", error);
-  });
 
 //The file retrieval logic ends here
 const fetchResponse = async (chat, userId) => {
@@ -262,6 +135,7 @@ const createChatLi = (message, className) => {
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
   const requestData = {
+    conversationId: window.parent.vionikoaiChat?.conversationId,
     userId: window.parent.vionikoaiChat?.userId,
     prompt: userMessage,
     fileName: window.parent.vionikoaiChat?.fileName,
@@ -274,21 +148,30 @@ const generateResponse = async (chatElement, userMessage) => {
     previousMessages,
     temperature: Number(window.parent.vionikoaiChat?.temperature),
   };
-  const fileContent = await getFileContent();
-  const context = await contextRetriever(fileContent, userMessage);
-  const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
-  ----------------
-  CONTEXT: ${context}
-  ----------------
-  QUESTION: ${userMessage}
-  ----------------
-  Helpful Answer:`;
-  const extendedMessages = [
-    ...previousMessages,
-    { role: "user", content: prompt },
-  ];
 
   try {
+    // Use the new performSimilaritySearchOnDocument function
+    const similarDocs = await performSimilaritySearchOnDocument({
+      conversationId: requestData.conversationId,
+      query: userMessage,
+    });
+
+    // Combine the context from similar documents
+    const context = similarDocs.map((doc) => doc.content).join("\n");
+
+    const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
+    ----------------
+    CONTEXT: ${context}
+    ----------------
+    QUESTION: ${userMessage}
+    ----------------
+    Helpful Answer:`;
+
+    const extendedMessages = [
+      ...previousMessages,
+      { role: "user", content: prompt },
+    ];
+
     let accumulatedData = "";
     let accumulatedContent = "";
     const reader = await fetchResponse(
@@ -296,6 +179,7 @@ const generateResponse = async (chatElement, userMessage) => {
       window.parent.vionikoaiChat?.userId
     );
     chatElement.classList.remove("loader");
+
     while (true) {
       const { done, value } = await reader.read();
       accumulatedData += new TextDecoder().decode(value);
@@ -306,11 +190,10 @@ const generateResponse = async (chatElement, userMessage) => {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
-             window.chatCount ? window.chatCount++ : (window.chatCount = 1);
-            console.log("I am now running the fetch");
-            console.log("The chat count is", window.chatCount)
-            // First fetch request
-            fetch(
+            window.chatCount ? window.chatCount++ : (window.chatCount = 1);
+
+            // Save chat history
+            await fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
               {
                 method: "POST",
@@ -327,40 +210,27 @@ const generateResponse = async (chatElement, userMessage) => {
                   role: "user",
                 }),
               }
-            )
-              .then((res) => res.json())
-              .then((data) => {
-                console.log(data);
+            );
 
-                // Second fetch request inside the .then() of the first fetch
-                return fetch(
-                  "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      userId: requestData.userId,
-                      chatId: requestData.chatId,
-                      chatName: requestData.chatName,
-                      name: requestData.name,
-                      email: requestData.email,
-                      phone: requestData.phone,
-                      fileName: requestData.fileName,
-                      message: accumulatedContent,
-                      role: "assistant",
-                    }),
-                  }
-                );
-              })
-              .then((res) => res.json())
-              .then((data) => {
-                console.log(data);
-              })
-              .catch((err) => {
-                console.error("Error:", err);
-              });
+            await fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: accumulatedContent,
+                  role: "assistant",
+                }),
+              }
+            );
 
-            // Break statement
             break;
           }
         } catch (error) {
@@ -395,15 +265,13 @@ const generateResponse = async (chatElement, userMessage) => {
 // ## Handle Chat
 // Function to handle chat interactions
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
-    if (window.chatCount >= 3) {
-      console.log(
-        "I am now running because window.chatCount is greater than 3"
-      );
-      document.getElementById("live-support-container").style.display !==
-        "block" &&
-        (document.getElementById("live-support-container").style.display =
-          "block");
-    }
+  if (window.chatCount >= 3) {
+    console.log("I am now running because window.chatCount is greater than 3");
+    document.getElementById("live-support-container").style.display !==
+      "block" &&
+      (document.getElementById("live-support-container").style.display =
+        "block");
+  }
   const userMessage = chatInput.value.trim();
   if (!userMessage) return;
   chatInput.value = "";
@@ -423,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
   /*Now let us select an element with the id vionikoid for later */
   const vionikoid = window.parent.document.getElementById("vionikodiv");
   if (vionikoid) {
-    console.log("I found the element with the id vionikoid")
+    console.log("I found the element with the id vionikoid");
   } else {
     console.error("Element with ID 'vionikodiv' not found");
   }
@@ -442,12 +310,12 @@ document.addEventListener("DOMContentLoaded", () => {
   sendChatBtn.addEventListener("click", () =>
     handleChat(chatInput, chatbox, inputInitHeight)
   );
-  closeBtn.addEventListener("click", () =>{
+  closeBtn.addEventListener("click", () => {
     document.body.classList.remove("show-chatbot");
     vionikoid.classList.toggle("closed");
-});
-  chatbotToggler.addEventListener("click", () =>{
+  });
+  chatbotToggler.addEventListener("click", () => {
     document.body.classList.toggle("show-chatbot");
     vionikoid.classList.toggle("closed");
-});
+  });
 });

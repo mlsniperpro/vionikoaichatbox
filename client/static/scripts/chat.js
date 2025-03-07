@@ -1,16 +1,8 @@
-/*Context retrieval logic*/
-function cosineSimilarity(a, b) {
-  const dotProduct = a.reduce((sum, val, i) => sum + val * b[i], 0);
-  const magnitudeA = Math.sqrt(a.reduce((sum, val) => sum + val * val, 0));
-  const magnitudeB = Math.sqrt(b.reduce((sum, val) => sum + val * val, 0));
-  return dotProduct / (magnitudeA * magnitudeB);
-}
-
 async function fetchApiModel() {
   // Try to get the cached data from sessionStorage
   const cachedData = sessionStorage.getItem("apiModelData");
   if (cachedData !== null) {
-    return JSON.parse(cachedData); // Parse the string back into JSON
+    return JSON.parse(cachedData);
   }
 
   const response = await fetch(
@@ -25,7 +17,6 @@ async function fetchApiModel() {
 
   if (response.ok) {
     const result = await response.json();
-    // Store the result in sessionStorage after converting it to a string
     sessionStorage.setItem("apiModelData", JSON.stringify(result.data));
     return result.data;
   } else {
@@ -35,190 +26,9 @@ async function fetchApiModel() {
   }
 }
 
-const createEmbeddings = async ({ token, model, input }) => {
-  const response = await fetch("https://api.openai.com/v1/embeddings", {
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${token}`,
-    },
-    method: "POST",
-    body: JSON.stringify({ input, model }),
-  });
-
-  const { error, data, usage } = await response.json();
-
-  return data;
-};
-
-const getEmbeddings = async (chunks) => {
-  const data = await fetchApiModel()
-  const signature = data.apiKey;
-  console.log("Here is the signature", signature)
-  const embeddingsWithChunks = await Promise.all(
-    chunks.map(async (chunk) => {
-      const embedding = await createEmbeddings({
-        token: signature,
-        model: "text-embedding-ada-002",
-        input: chunk,
-      });
-
-      return { chunk, embedding };
-    })
-  );
-  return embeddingsWithChunks;
-};
-
-function getSimilarity(embeddingsWithChunks, query_embedding) {
-  const similarities = embeddingsWithChunks.map(({ embedding }, index) => {
-    // Access the embedding data from embeddingsWithChunks
-    const embeddingData = embedding[0].embedding;
-    try {
-      return cosineSimilarity(embeddingData, query_embedding);
-    } catch (error) {
-      console.error(`Error processing embedding #${index + 1}:`, error.message);
-      return null;
-    }
-  });
-  return similarities;
-}
-
-function getSimilarDocs(similarities, docs) {
-  const similarDocs = similarities.map((similarity, index) => {
-    return {
-      similarity: similarity,
-      doc: docs[index],
-    };
-  });
-  return similarDocs;
-}
-
-function sortSimilarDocs(similarDocs, numDocs) {
-  const sortedSimilarDocs = similarDocs.sort(
-    (a, b) => b.similarity - a.similarity
-  );
-  return sortedSimilarDocs.slice(0, numDocs); // Return only the specified number of documents
-}
-
-const getSimilarDocsFromChunks = async (
-  embeddingsWithChunks,
-  query,
-  numDocs
-) => {
-  const [query_embedding_obj] = await getEmbeddings([query]);
-  const query_embedding = query_embedding_obj.embedding[0].embedding;
-  const similarities = getSimilarity(embeddingsWithChunks, query_embedding);
-  const chunks = embeddingsWithChunks.map(({ chunk }) => chunk);
-  const similarDocs = getSimilarDocs(similarities, chunks);
-  const sortedSimilarDocs = sortSimilarDocs(similarDocs, numDocs);
-  return sortedSimilarDocs;
-};
-const contextRetriever = async (embeddingData, input) => {
-  let texts;
-  const docs = await getSimilarDocsFromChunks(embeddingData, input, 4);
-  texts = docs.map((doc) => doc.doc);
-  texts = texts.join(" ");
-  return texts;
-};
-
-/*Context retrieval logic ends here*/
-
-//The file retrieval logic
-let fileContentInRam = null;
-
-async function cacheFileContent(content) {
-  console.log("I am now caching the file content");
-  const cache = await caches.open("fileContentCache");
-  const request = new Request("fileContentKey");
-  const response = new Response(JSON.stringify(content));
-  await cache.put(request, response);
-}
-
-async function getCachedFileContent() {
-  console.log("I am now getting the cached file content");
-  const cache = await caches.open("fileContentCache");
-  const response = await cache.match("fileContentKey");
-  if (response) {
-    const content = await response.json();
-    return content;
-  }
-  return null;
-}
-
-async function queryFirebaseFunction() {
-  console.log("I am now querying the firebase function");
-  const data = {
-    userId: window.vionikoaiChat?.userId,
-    fileName: window.vionikoaiChat?.fileName,
-  };
-
-  const response = await fetch(
-    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getFileContent",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(data),
-    }
-  );
-
-  if (response.ok) {
-    const result = await response.json();
-    return result.fileContent;
-  } else {
-    throw new Error(
-      `Failed to query function: ${response.status} ${response.statusText}`
-    );
-  }
-}
-
-async function getFileContent() {
-  console.log("I am now getting the file content");
-  // Try getting content from RAM
-  if (fileContentInRam) {
-    console.log("I retrived the content from the RAM");
-    return fileContentInRam;
-  }
-
-  // Try getting content from Cache
-  const cachedContent = await getCachedFileContent();
-  if (cachedContent) {
-    fileContentInRam = cachedContent;
-    return cachedContent;
-  }
-
-  // Fetch content from server
-  const fetchedContent = await queryFirebaseFunction();
-
-  // Store in both RAM and Cache
-  fileContentInRam = fetchedContent;
-  await cacheFileContent(fetchedContent);
-
-  return fetchedContent;
-}
-getFileContent()
-  .then((content) => {
-    console.log("File content:", content);
-  })
-  .catch((error) => {
-    console.error("An error occurred:", error);
-  });
-
-//The file retrieval logic ends here
-const previousMessages = [
-  {
-    role: "system",
-    content: window.vionikoaiChat?.systemPrompt || "",
-  },
-];
-// Function to sanitize HTML
-const sanitizeHTML = (str) => {
-  const temp = document.createElement("div");
-  temp.textContent = str;
-  return temp.innerHTML;
-};
+// The fetch response logic
 const fetchResponse = async (chat, userId) => {
-  const data = await fetchApiModel()
+  const data = await fetchApiModel();
   const signature = data.apiKey;
   try {
     console.log("I am now fetching the response");
@@ -234,21 +44,70 @@ const fetchResponse = async (chat, userId) => {
         stream: true,
       }),
     });
-    console.log("I got the response");
     if (!response.ok) {
       throw new Error(`API responded with HTTP ${response.status}`);
     }
-    console.log("I retuned the response immediately");
     return response.body.getReader();
   } catch (error) {
     console.error("Error fetching response:", error);
-    throw error; // Propagate the error to the calling function
+    throw error;
   }
 };
+
+async function performSimilaritySearchOnDocument({ conversationId, query }) {
+  const API_URL = "https://vector-databases.fly.dev";
+  console.log("Starting similarity search with:", { conversationId, query });
+
+  // Create embedding using fetch
+  const embeddingsResponse = await fetch(
+    "https://llm-functionalities.fly.dev/create-embedding",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        input: query,
+        model: "text-embedding-3-large",
+      }),
+    }
+  );
+
+  const embeddingsData = await embeddingsResponse.json();
+  const embeddingVector = embeddingsData.embedding;
+
+  // Zilliz search
+  const response = await fetch(`${API_URL}/zilliz/search`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      collection_name: "chat",
+      queryVector: embeddingVector,
+      conversationId: conversationId,
+      limit: 10,
+    }),
+  });
+
+  const responseData = await response.json();
+  return responseData.data.map((item) => ({
+    content: item.content,
+    pageNumber: item.pageNumber,
+  }));
+}
+
+const previousMessages = [
+  {
+    role: "system",
+    content: window.vionikoaiChat?.systemPrompt || "",
+  },
+];
+
 // Function to append messages to the chatbox
 const appendMessage = (message, type) => {
   const chatbox = document.getElementById("chatbox");
-  const parsedMessage = message; // Assuming sanitization is done elsewhere
+  const parsedMessage = message;
   const messageHTML = `<p class="${type}Text"><span>${parsedMessage}</span></p>`;
   chatbox.insertAdjacentHTML("beforeend", messageHTML);
 };
@@ -274,7 +133,6 @@ document.addEventListener("click", (e) => {
 });
 
 // Text input event listener
-// Text input event listener
 document.getElementById("textInput").addEventListener("keypress", (e) => {
   if (e.key === "Enter") {
     getResponse();
@@ -294,7 +152,6 @@ const firstBotMessage = () => {
 // Function to get bot response
 const getResponse = async () => {
   if (window.chatCount >= 3) {
-    console.log("I am now running because window.chatCount is greater than 3");
     document.getElementById("chat-live-support").style.display !== "block" &&
       (document.getElementById("chat-live-support").style.display = "block");
   }
@@ -308,7 +165,6 @@ const getResponse = async () => {
 // Function to send text with a button
 const buttonSendText = (sampleText) => {
   document.getElementById("textInput").value = "";
-  //appendMessage(sampleText, "user");
   document.getElementById("chat-bar-bottom").scrollIntoView(true);
 };
 
@@ -318,9 +174,11 @@ async function getBotResponse(input) {
   const currentMessageElement =
     document.getElementById("chatbox").lastElementChild;
   currentMessageElement.classList.add("loader");
+
   try {
     const requestData = {
       userId: window.vionikoaiChat?.userId,
+      conversationId: window.vionikoaiChat?.conversationId,
       prompt: input,
       fileName: window.vionikoaiChat?.fileName,
       chatId: window.vionikoaiChat?.chatId,
@@ -332,33 +190,36 @@ async function getBotResponse(input) {
       previousMessages,
       temperature: Number(window.vionikoaiChat?.temperature),
     };
-    const fileContent = await getFileContent();
-    const context = await contextRetriever(fileContent, input);
+
+    // Use performSimilaritySearchOnDocument for context retrieval
+    const similarDocs = await performSimilaritySearchOnDocument({
+      conversationId: requestData.conversationId,
+      query: input,
+    });
+
+    const context = similarDocs.map((doc) => doc.content).join("\n");
     currentMessageElement.classList.remove("loader");
+
     const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
-  ----------------
-  CONTEXT: ${context}
-  ----------------
-  QUESTION: ${input}
-  ----------------
-  Helpful Answer:`;
+    ----------------
+    CONTEXT: ${context}
+    ----------------
+    QUESTION: ${input}
+    ----------------
+    Helpful Answer:`;
 
     const extendedMessages = [
       ...previousMessages,
       { role: "user", content: prompt },
     ];
-    const response = await fetchResponse(
+
+    const reader = await fetchResponse(
       extendedMessages,
       window.vionikoaiChat?.userId
     );
-    previousMessages.push({
-      role: "user",
-      content: input,
-    });
 
     let accumulatedData = "";
     let accumulatedContent = "";
-    const reader = response; //response.body.getReader();
 
     while (true) {
       const { done, value } = await reader.read();
@@ -370,10 +231,10 @@ async function getBotResponse(input) {
         try {
           jsonData = JSON.parse(match[1]);
           if (jsonData.choices[0].finish_reason === "stop") {
-             window.chatCount? window.chatCount++ : (window.chatCount = 1);
+            window.chatCount ? window.chatCount++ : (window.chatCount = 1);
 
-            // First fetch request
-            fetch(
+            // Save chat history
+            await fetch(
               "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
               {
                 method: "POST",
@@ -390,40 +251,27 @@ async function getBotResponse(input) {
                   role: "user",
                 }),
               }
-            )
-              .then((res) => res.json())
-              .then((data) => {
-                console.log(data);
+            );
 
-                // Second fetch request inside the .then() of the first fetch
-                return fetch(
-                  "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-                  {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({
-                      userId: requestData.userId,
-                      chatId: requestData.chatId,
-                      chatName: requestData.chatName,
-                      name: requestData.name,
-                      email: requestData.email,
-                      phone: requestData.phone,
-                      fileName: requestData.fileName,
-                      message: accumulatedContent,
-                      role: "assistant",
-                    }),
-                  }
-                );
-              })
-              .then((res) => res.json())
-              .then((data) => {
-                console.log(data);
-              })
-              .catch((err) => {
-                console.error("Error:", err);
-              });
+            await fetch(
+              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+              {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  userId: requestData.userId,
+                  chatId: requestData.chatId,
+                  chatName: requestData.chatName,
+                  name: requestData.name,
+                  email: requestData.email,
+                  phone: requestData.phone,
+                  fileName: requestData.fileName,
+                  message: accumulatedContent,
+                  role: "assistant",
+                }),
+              }
+            );
 
-            // Break statement
             break;
           }
         } catch (error) {
@@ -433,7 +281,6 @@ async function getBotResponse(input) {
         const { delta } = jsonData.choices[0];
         if (delta && delta.content) {
           accumulatedContent += delta.content;
-
           if (!currentMessageElement) {
             appendMessage(accumulatedContent, "bot");
             currentMessageElement =
