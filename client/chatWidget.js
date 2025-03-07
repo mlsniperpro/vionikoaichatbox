@@ -175,21 +175,27 @@ const loadScripts = () => {
 
 // Attach Live Support Button
 const attachLiveSupportButton = () => {
-  const liveSupportButton = document.getElementById("live-support-button");
-  const supportNumber = window.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
+  // Add a small delay to ensure the button exists
+  setTimeout(() => {
+    const liveSupportButton = document.getElementById("live-support-button");
+    if (liveSupportButton) {
+      const supportNumber =
+        window.vionikoaiChat.supportContact || "15035833307";
 
-  liveSupportButton.addEventListener("click", () => {
-    if (window.vionikoaiChat.supportType === "whatsapp") {
-      window.open(
-        `https://api.whatsapp.com/send?phone=${supportNumber}`,
-        "_blank"
-      );
-    } else if (window.vionikoaiChat.supportType === "telegram") {
-      window.open(`https://t.me/${supportNumber}`, "_blank");
-    } else {
-      window.open(`${supportNumber}`, "_blank");
+      liveSupportButton.addEventListener("click", () => {
+        if (window.vionikoaiChat.supportType === "whatsapp") {
+          window.open(
+            `https://api.whatsapp.com/send?phone=${supportNumber}`,
+            "_blank"
+          );
+        } else if (window.vionikoaiChat.supportType === "telegram") {
+          window.open(`https://t.me/${supportNumber}`, "_blank");
+        } else {
+          window.open(`${supportNumber}`, "_blank");
+        }
+      });
     }
-  });
+  }, 100);
 };
 
 // Initialize chat
@@ -197,7 +203,8 @@ const initializeChat = () => {
   loadStyles();
   appendChatHTML();
   loadScripts();
-  attachLiveSupportButton();
+  // Call attachLiveSupportButton after a delay to ensure DOM is ready
+  setTimeout(attachLiveSupportButton, 500);
 };
 
 // Initialize chat
