@@ -79,6 +79,10 @@ function loadIframe() {
       <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
     </div>
   `;
+  // Check if supportType exists and is not null before including it in the HTML
+  const shouldShowSupportButton =
+    window?.parent?.vionikoaiChat?.supportType &&
+    window.parent.vionikoaiChat.supportType !== "null";
 
   const srcDocContent = `
   <html lang="en" dir="ltr">
@@ -159,7 +163,7 @@ function loadIframe() {
       <span class="material-symbols-outlined">close</span>
     </button>
     <div class="chatbot-container">
-      ${window.parent.vionikoaiChat.supportType && liveSupportButtonHTML}
+      ${shouldShowSupportButton? window.parent.vionikoaiChat.supportType && liveSupportButtonHTML: ""}
       <div class="chatbot">
         <header>
           <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
