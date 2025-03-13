@@ -96,9 +96,15 @@ const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const liveSupportButton = `<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #ff0000; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease; z-index: 1000;">
-      ${window.vionikoaiChat.supportLabel || "Live Support"}
-    </button>`;
+
+  // Updated live support button with dismiss icon
+  const liveSupportButton = `
+    <div class="live-support-container" style="position: fixed; bottom: 20px; right: 20px; display: flex; z-index: 1000; font-family: 'Poppins', sans-serif;">
+      <button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: relative; background-color: #ff0000; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease;">
+        ${window.vionikoaiChat.supportLabel || "Live Support"}
+      </button>
+      <button id="dismiss-support-button" class="dismiss-support-button" aria-label="Dismiss support button" style="background: #724ae8; border: none; color: white; font-size: 18px; cursor: pointer; position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; border-radius: 12px; text-align: center; line-height: 24px; transition: background-color 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">&times;</button>
+    </div>`;
 
   const chatHTML = `
     <div class="chat-bar-collapsible">
@@ -178,6 +184,8 @@ const attachLiveSupportButton = () => {
   // Add a small delay to ensure the button exists
   setTimeout(() => {
     const liveSupportButton = document.getElementById("live-support-button");
+    const dismissButton = document.getElementById("dismiss-support-button");
+
     if (liveSupportButton) {
       const supportNumber =
         window.vionikoaiChat.supportContact || "15035833307";
@@ -192,6 +200,17 @@ const attachLiveSupportButton = () => {
           window.open(`https://t.me/${supportNumber}`, "_blank");
         } else {
           window.open(`${supportNumber}`, "_blank");
+        }
+      });
+    }
+
+    // Add event listener for dismiss button
+    if (dismissButton) {
+      dismissButton.addEventListener("click", (e) => {
+        e.stopPropagation(); // Prevent triggering the live support button click
+        const chatLiveSupport = document.getElementById("chat-live-support");
+        if (chatLiveSupport) {
+          chatLiveSupport.style.display = "none";
         }
       });
     }
