@@ -112,7 +112,7 @@ function loadIframe() {
       }
 
       #live-support-button {
-        background-color: #724ae8;
+        background-color: #ff0000;
         color: white;
         padding: 12px 24px;
         font-size: 0.95rem;
@@ -126,7 +126,7 @@ function loadIframe() {
       }
 
       #live-support-button:hover {
-        background-color: #5f3cc6;
+        background-color: #cc0000;
         transform: translateY(-2px);
       }
 
@@ -163,7 +163,11 @@ function loadIframe() {
       <span class="material-symbols-outlined">close</span>
     </button>
     <div class="chatbot-container">
-      ${shouldShowSupportButton? window.parent.vionikoaiChat.supportType && liveSupportButtonHTML: ""}
+      ${
+        shouldShowSupportButton
+          ? window.parent.vionikoaiChat.supportType && liveSupportButtonHTML
+          : ""
+      }
       <div class="chatbot">
         <header>
           <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>

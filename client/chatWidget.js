@@ -96,7 +96,7 @@ const appendChatHTML = () => {
   const inputPlaceholder =
     window.vionikoaiChat?.inputPlaceholder || "Tap Enter to send a message";
   const chatName = window.vionikoaiChat?.chatName || "VionikoAIChat!";
-  const liveSupportButton = `<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #724ae8; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease; z-index: 1000;">
+  const liveSupportButton = `<button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: fixed; bottom: 20px; right: 20px; background-color: #ff0000; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease; z-index: 1000;">
       ${window.vionikoaiChat.supportLabel || "Live Support"}
     </button>`;
 

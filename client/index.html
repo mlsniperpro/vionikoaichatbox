@@ -7,24 +7,37 @@
   </head>
   <body>
     <h1>Hello, this is my test website</h1>
- <script type="application/javascript">window.vionikoaiChat = {
-  "userId": "fcJAePkUVwV7fBR3uiGh5iyt2Tf1",
-  "conversationId": "213a17aa-7f03-4646-b689-8fcad9ab8b84",
-  "fileName": "213a17aa-7f03-4646-b689-8fcad9ab8b84",
-  "systemPrompt": "I want you to act as a friendly and helpful support agent named \"Asistente Virtual\". Provide informative and warm answers in a conversational tone. After addressing the question, kindly ask if there's anything else I can assist with. If the question is not included in the context, say exactly \"Hmm, me apena no poder ayudar de momento con eso!\". If someone greets you or says hi, warmly greet them back and ask how you can assist. Always give your answers in Spanish. Never break character.",
-  "temperature": "0.6",
-  "supportType": null,
-  "customSupportUrl": "",
-  "supportContact": "",
-  "submit": "Click p/Chatear",
-  "phone": "Whatsapp",
-  "email": "Email",
-  "name": "Nombre",
-  "firstMessage": "Dudas respecto IMM",
-  "inputPlaceholder": "Aqui pones tu Duda ...",
-  "chatName": "Tu Asesor Virtual IMM",
-  "supportLabel": "Dudas via Telegram Clic",
-  "supportOption": ""
-};(function(d, s, id) {var js, fjs = d.getElementsByTagName(s)[0];if (d.getElementById(id)) return;js = d.createElement(s);js.id = id;js.async = true;js.src = "chatWidgetIframe.js";fjs.parentNode.insertBefore(js, fjs);}(document, 'script', 'vionikoaiChat-jssdk'));</script>
+    <script type="application/javascript">
+      window.vionikoaiChat = {
+        userId: "fcJAePkUVwV7fBR3uiGh5iyt2Tf1",
+        conversationId: "213a17aa-7f03-4646-b689-8fcad9ab8b84",
+        fileName: "213a17aa-7f03-4646-b689-8fcad9ab8b84",
+        systemPrompt:
+          'I want you to act as a friendly and helpful support agent named "Asistente Virtual". Provide informative and warm answers in a conversational tone. After addressing the question, kindly ask if there\'s anything else I can assist with. If the question is not included in the context, say exactly "Hmm, me apena no poder ayudar de momento con eso!". If someone greets you or says hi, warmly greet them back and ask how you can assist. Always give your answers in Spanish. Never break character.',
+        temperature: "0.6",
+        supportType: "Whatsapp",
+        customSupportUrl: "",
+        supportContact: "+254713727575",
+        submit: "Click p/Chatear",
+        phone: "Whatsapp",
+        email: "Email",
+        name: "Nombre",
+        firstMessage: "Dudas respecto IMM",
+        inputPlaceholder: "Aqui pones tu Duda ...",
+        chatName: "Tu Asesor Virtual IMM",
+        supportLabel: "Dudas via Telegram Clic",
+        supportOption: "",
+      };
+      (function (d, s, id) {
+        var js,
+          fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.async = true;
+        js.src = "chatWidgetIframe.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      })(document, "script", "vionikoaiChat-jssdk");
+    </script>
   </body>
 </html>
