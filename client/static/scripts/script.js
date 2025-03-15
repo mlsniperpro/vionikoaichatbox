@@ -49,11 +49,11 @@ async function fetchApiModel() {
   // Try to get the cached data from sessionStorage
   const cachedData = sessionStorage.getItem("apiModelData");
   if (cachedData !== null) {
-    return JSON.parse(cachedData); // Parse the string back into JSON
+    return JSON.parse(cachedData);
   }
 
   const response = await fetch(
-    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
+    "https://www.chatvioniko.com/api/models",
     {
       method: "GET",
       headers: {
@@ -64,9 +64,18 @@ async function fetchApiModel() {
 
   if (response.ok) {
     const result = await response.json();
-    // Store the result in sessionStorage after converting it to a string
-    sessionStorage.setItem("apiModelData", JSON.stringify(result.data));
-    return result.data;
+    // Find the embedded model
+    const embeddedModel = result.models.find(model => model.sectionId === 'embedded');
+    if (!embeddedModel) {
+      throw new Error('Embedded model not found in available models');
+    }
+    const data = {
+      model: embeddedModel.id,
+      apiKey: result.apiKey
+    };
+    // Store the result in sessionStorage
+    sessionStorage.setItem("apiModelData", JSON.stringify(data));
+    return data;
   } else {
     throw new Error(
       `Failed to query function: ${response.status} ${response.statusText}`

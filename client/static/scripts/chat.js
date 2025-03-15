@@ -1,6 +1,6 @@
 async function fetchApiModel() {
   const response = await fetch(
-    "https://us-central1-vioniko-82fcb.cloudfunctions.net/getApiKey",
+    "https://www.chatvioniko.com/api/models",
     {
       method: "GET",
       headers: {
@@ -11,7 +11,15 @@ async function fetchApiModel() {
 
   if (response.ok) {
     const result = await response.json();
-    return result.data;
+    // Find the embedded model
+    const embeddedModel = result.models.find(model => model.sectionId === 'embedded');
+    if (!embeddedModel) {
+      throw new Error('Embedded model not found in available models');
+    }
+    return {
+      model: embeddedModel.id,
+      apiKey: result.apiKey
+    };
   } else {
     throw new Error(
       `Failed to query function: ${response.status} ${response.statusText}`
