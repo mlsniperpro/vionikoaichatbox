@@ -169,7 +169,7 @@ const fetchResponse = async (chat, userId) => {
           model: data.model,
           messages: chat,
           stream: true,
-          max_tokens: Math.floor(data.tokenLimit * 0.9), // Leave 10% for safety
+         // max_tokens: Math.floor(data.tokenLimit * 0.9), // Leave 10% for safety
         };
         break;
       case "anthropic":
