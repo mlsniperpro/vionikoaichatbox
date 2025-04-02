@@ -1,41 +1,42 @@
 async function fetchApiModel() {
-  const response = await fetch(
-    "https://www.chatvioniko.com/api/models",
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const response = await fetch("https://www.chatvioniko.com/api/models", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
   if (response.ok) {
     const result = await response.json();
-    
+
     // Get the preferred provider, defaulting to openai
-    const provider = result.defaultProvider || 'openai';
-    
+    const provider = result.defaultProvider || "openai";
+
     // First try to find embedded model from default provider
-    let selectedModel = result.models.find(model => 
-      model.sectionId === 'embedded' && model.provider === provider
+    let selectedModel = result.models.find(
+      (model) => model.sectionId === "embedded" && model.provider === provider
     );
 
     // If not found and provider isn't openai, fall back to openai
-    if (!selectedModel && provider !== 'openai') {
-      console.warn(`No embedded model found for provider ${provider}, falling back to OpenAI`);
-      selectedModel = result.models.find(model => 
-        model.sectionId === 'embedded' && model.provider === 'openai'
+    if (!selectedModel && provider !== "openai") {
+      console.warn(
+        `No embedded model found for provider ${provider}, falling back to OpenAI`
+      );
+      selectedModel = result.models.find(
+        (model) => model.sectionId === "embedded" && model.provider === "openai"
       );
     }
 
     if (!selectedModel) {
-      throw new Error('No suitable embedded model found in available models');
+      throw new Error("No suitable embedded model found in available models");
     }
 
     // Get the provider API key
     const providerKey = result.providers[selectedModel.provider];
     if (!providerKey) {
-      throw new Error(`API key not found for provider: ${selectedModel.provider}`);
+      throw new Error(
+        `API key not found for provider: ${selectedModel.provider}`
+      );
     }
 
     return {
@@ -45,7 +46,7 @@ async function fetchApiModel() {
       name: selectedModel.name,
       displayName: selectedModel.displayName,
       maxLength: selectedModel.maxLength,
-      tokenLimit: selectedModel.tokenLimit
+      tokenLimit: selectedModel.tokenLimit,
     };
   } else {
     throw new Error(
@@ -58,16 +59,16 @@ async function fetchApiModel() {
 const fetchResponse = async (chat, userId) => {
   const data = await fetchApiModel();
   const signature = data.apiKey;
-  
+
   try {
     console.log("I am now fetching the response");
-    
+
     // Currently only supporting OpenAI, but structured for future providers
     let endpoint;
     let payload;
-    
+
     switch (data.provider) {
-      case 'openai':
+      case "openai":
         endpoint = "https://api.openai.com/v1/chat/completions";
         payload = {
           model: data.model,
@@ -76,9 +77,9 @@ const fetchResponse = async (chat, userId) => {
           max_tokens: Math.floor(data.tokenLimit * 0.9), // Leave 10% for safety
         };
         break;
-      case 'anthropic':
-      case 'deepseek':
-      case 'xai':
+      case "anthropic":
+      case "deepseek":
+      case "xai":
         throw new Error(`Provider ${data.provider} support coming soon`);
       default:
         throw new Error(`Unknown provider: ${data.provider}`);
@@ -92,9 +93,18 @@ const fetchResponse = async (chat, userId) => {
       },
       body: JSON.stringify(payload),
     });
+
     if (!response.ok) {
-      throw new Error(`API responded with HTTP ${response.status}`);
+      // Get the detailed error message from the response
+      const errorData = await response.json();
+      console.error("Full API error:", errorData);
+      throw new Error(
+        `API responded with HTTP ${response.status}: ${JSON.stringify(
+          errorData
+        )}`
+      );
     }
+
     return response.body.getReader();
   } catch (error) {
     console.error("Error fetching response:", error);
@@ -146,10 +156,12 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
 }
 
 // Initialize messages array with just the system prompt
-const previousMessages = [{
-  role: "system",
-  content: window.vionikoaiChat?.systemPrompt || "",
-}];
+const previousMessages = [
+  {
+    role: "system",
+    content: window.vionikoaiChat?.systemPrompt || "",
+  },
+];
 
 // Function to append messages to the chatbox
 const appendMessage = (message, type) => {
@@ -245,7 +257,7 @@ async function getBotResponse(input) {
     });
 
     // Store only unique and relevant context pieces
-    const uniqueContexts = new Set(similarDocs.map(doc => doc.content));
+    const uniqueContexts = new Set(similarDocs.map((doc) => doc.content));
     const context = Array.from(uniqueContexts).join("\n");
     currentMessageElement.classList.remove("loader");
 
@@ -349,7 +361,10 @@ async function getBotResponse(input) {
   } finally {
     previousMessages.push(
       { role: "user", content: input },
-      { role: "assistant", content: currentMessageElement.querySelector("span").textContent }
+      {
+        role: "assistant",
+        content: currentMessageElement.querySelector("span").textContent,
+      }
     );
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
