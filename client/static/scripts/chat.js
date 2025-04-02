@@ -11,14 +11,41 @@ async function fetchApiModel() {
 
   if (response.ok) {
     const result = await response.json();
-    // Find the embedded model
-    const embeddedModel = result.models.find(model => model.sectionId === 'embedded');
-    if (!embeddedModel) {
-      throw new Error('Embedded model not found in available models');
+    
+    // Get the preferred provider, defaulting to openai
+    const provider = result.defaultProvider || 'openai';
+    
+    // First try to find embedded model from default provider
+    let selectedModel = result.models.find(model => 
+      model.sectionId === 'embedded' && model.provider === provider
+    );
+
+    // If not found and provider isn't openai, fall back to openai
+    if (!selectedModel && provider !== 'openai') {
+      console.warn(`No embedded model found for provider ${provider}, falling back to OpenAI`);
+      selectedModel = result.models.find(model => 
+        model.sectionId === 'embedded' && model.provider === 'openai'
+      );
     }
+
+    if (!selectedModel) {
+      throw new Error('No suitable embedded model found in available models');
+    }
+
+    // Get the provider API key
+    const providerKey = result.providers[selectedModel.provider];
+    if (!providerKey) {
+      throw new Error(`API key not found for provider: ${selectedModel.provider}`);
+    }
+
     return {
-      model: embeddedModel.id,
-      apiKey: result.apiKey
+      model: selectedModel.id,
+      provider: selectedModel.provider,
+      apiKey: providerKey,
+      name: selectedModel.name,
+      displayName: selectedModel.displayName,
+      maxLength: selectedModel.maxLength,
+      tokenLimit: selectedModel.tokenLimit
     };
   } else {
     throw new Error(
@@ -31,19 +58,39 @@ async function fetchApiModel() {
 const fetchResponse = async (chat, userId) => {
   const data = await fetchApiModel();
   const signature = data.apiKey;
+  
   try {
     console.log("I am now fetching the response");
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    
+    // Currently only supporting OpenAI, but structured for future providers
+    let endpoint;
+    let payload;
+    
+    switch (data.provider) {
+      case 'openai':
+        endpoint = "https://api.openai.com/v1/chat/completions";
+        payload = {
+          model: data.model,
+          messages: chat,
+          stream: true,
+          max_tokens: Math.floor(data.tokenLimit * 0.9), // Leave 10% for safety
+        };
+        break;
+      case 'anthropic':
+      case 'deepseek':
+      case 'xai':
+        throw new Error(`Provider ${data.provider} support coming soon`);
+      default:
+        throw new Error(`Unknown provider: ${data.provider}`);
+    }
+
+    const response = await fetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: "Bearer " + signature,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        model: data.model,
-        messages: chat,
-        stream: true,
-      }),
+      body: JSON.stringify(payload),
     });
     if (!response.ok) {
       throw new Error(`API responded with HTTP ${response.status}`);
