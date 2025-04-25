@@ -1,24 +1,30 @@
 async function fetchApiModel() {
-  const response = await fetch(
-    "https://www.chatvioniko.com/api/models",
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
+  const response = await fetch("https://www.chatvioniko.com/api/models", {
+    method: "GET",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  });
 
   if (response.ok) {
     const result = await response.json();
     // Find the embedded model
-    const embeddedModel = result.models.find(model => model.sectionId === 'embedded');
+    const embeddedModel = result.models.find(
+      (model) => model.sectionId === "embedded"
+    );
     if (!embeddedModel) {
-      throw new Error('Embedded model not found in available models');
+      throw new Error("Embedded model not found in available models");
+    }
+    // Get the API key for the model's provider
+    const providerApiKey = result.providers[embeddedModel.provider];
+    if (!providerApiKey) {
+      throw new Error(
+        "API key not found for provider: " + embeddedModel.provider
+      );
     }
     return {
       model: embeddedModel.id,
-      apiKey: result.apiKey
+      apiKey: providerApiKey,
     };
   } else {
     throw new Error(
@@ -99,10 +105,12 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
 }
 
 // Initialize messages array with just the system prompt
-const previousMessages = [{
-  role: "system",
-  content: window.vionikoaiChat?.systemPrompt || "",
-}];
+const previousMessages = [
+  {
+    role: "system",
+    content: window.vionikoaiChat?.systemPrompt || "",
+  },
+];
 
 // Function to append messages to the chatbox
 const appendMessage = (message, type) => {
@@ -198,7 +206,7 @@ async function getBotResponse(input) {
     });
 
     // Store only unique and relevant context pieces
-    const uniqueContexts = new Set(similarDocs.map(doc => doc.content));
+    const uniqueContexts = new Set(similarDocs.map((doc) => doc.content));
     const context = Array.from(uniqueContexts).join("\n");
     currentMessageElement.classList.remove("loader");
 
@@ -302,7 +310,10 @@ async function getBotResponse(input) {
   } finally {
     previousMessages.push(
       { role: "user", content: input },
-      { role: "assistant", content: currentMessageElement.querySelector("span").textContent }
+      {
+        role: "assistant",
+        content: currentMessageElement.querySelector("span").textContent,
+      }
     );
     document.getElementById("chat-bar-bottom").scrollIntoView(true);
   }
