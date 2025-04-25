@@ -69,9 +69,14 @@ async function fetchApiModel() {
     if (!embeddedModel) {
       throw new Error('Embedded model not found in available models');
     }
+    // Get the API key for the model's provider
+    const providerApiKey = result.providers[embeddedModel.provider];
+    if (!providerApiKey) {
+      throw new Error('API key not found for provider: ' + embeddedModel.provider);
+    }
     const data = {
       model: embeddedModel.id,
-      apiKey: result.apiKey
+      apiKey: providerApiKey
     };
     // Store the result in sessionStorage
     sessionStorage.setItem("apiModelData", JSON.stringify(data));
