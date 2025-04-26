@@ -45,86 +45,55 @@ async function performSimilaritySearchOnDocument({ conversationId, query }) {
     pageNumber: item.pageNumber,
   }));
 }
-async function fetchApiModel() {
-  // Try to get the cached data from sessionStorage
-  const cachedData = sessionStorage.getItem("apiModelData");
-  if (cachedData !== null) {
-    return JSON.parse(cachedData);
-  }
 
-  const response = await fetch(
-    "https://www.chatvioniko.com/api/models",
-    {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }
-  );
-
-  if (response.ok) {
-    const result = await response.json();
-    // Find the embedded model
-    const embeddedModel = result.models.find(model => model.sectionId === 'embedded');
-    if (!embeddedModel) {
-      throw new Error('Embedded model not found in available models');
-    }
-    // Get the API key for the model's provider
-    const providerApiKey = result.providers[embeddedModel.provider];
-    if (!providerApiKey) {
-      throw new Error('API key not found for provider: ' + embeddedModel.provider);
-    }
-    const data = {
-      model: embeddedModel.id,
-      apiKey: providerApiKey
-    };
-    // Store the result in sessionStorage
-    sessionStorage.setItem("apiModelData", JSON.stringify(data));
-    return data;
-  } else {
-    throw new Error(
-      `Failed to query function: ${response.status} ${response.statusText}`
-    );
-  }
-}
-
-//The file retrieval logic ends here
-const fetchResponse = async (chat, userId) => {
-  const data = await fetchApiModel();
-  const signature = data.apiKey;
+// Replace API key handling functions with a secure proxy approach
+async function streamFromProxyApi(userMessage) {
   try {
-    console.log("I am now fetching the response");
-    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+    console.log("Starting proxy API request with message:", userMessage);
+    const response = await fetch("https://www.chatvioniko.com/api/pdf", {
       method: "POST",
       headers: {
-        Authorization: "Bearer " + signature,
         "Content-Type": "application/json",
+        Accept: "text/event-stream",
       },
+      mode: "cors",
+      credentials: "omit",
       body: JSON.stringify({
-        model: data.model,
-        messages: chat,
-        stream: true,
+        messages: [{ role: "user", content: userMessage }],
+        systemPrompt: window.parent.vionikoaiChat?.systemPrompt || "",
+        data: {
+          conversationId: window.parent.vionikoaiChat?.conversationId,
+          fileName: window.parent.vionikoaiChat?.fileName,
+          userId: window.parent.vionikoaiChat?.userId,
+          chatId: window.parent.vionikoaiChat?.chatId,
+        },
+        language: "English",
+        origin: "embedded",
       }),
     });
-    console.log("I got the response");
+
     if (!response.ok) {
       throw new Error(`API responded with HTTP ${response.status}`);
     }
-    console.log("I retuned the response immediately");
-    return response.body.getReader();
+
+    console.log("Proxy API response received, status:", response.status);
+    return response; // Return the full response
   } catch (error) {
-    console.error("Error fetching response:", error);
-    throw error; // Propagate the error to the calling function
+    console.error("Error streaming chat response:", error);
+    throw error;
   }
-};
+}
+
 // ## Initialization
 const chatbotToggler = document.querySelector(".chatbot-toggler");
 
 // Initialize messages array with just the system prompt
-const previousMessages = [{
-  role: "system",
-  content: window.parent.vionikoaiChat?.systemPrompt || "",
-}];
+const previousMessages = [
+  {
+    role: "system",
+    content: window.parent.vionikoaiChat?.systemPrompt || "",
+  },
+];
 
 const closeBtn = document.querySelector(".close-btn");
 const chatbox = document.querySelector(".chatbox");
@@ -146,130 +115,160 @@ const createChatLi = (message, className) => {
   return chatLi;
 };
 
-// Function to generate a chat response from the server
+// Function to generate a chat response from the server - updated to use proxy
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
   const requestData = {
     conversationId: window.parent.vionikoaiChat?.conversationId,
     userId: window.parent.vionikoaiChat?.userId,
-    prompt: userMessage,
-    fileName: window.parent.vionikoaiChat?.fileName,
     chatId: window.parent.vionikoaiChat?.chatId,
     chatName: window.parent.vionikoaiChat?.chatName,
     name: window.parent.vionikoaiChat?.name,
     email: window.parent.vionikoaiChat?.email,
     phone: window.parent.vionikoaiChat?.phone,
-    embedded: true,
-    previousMessages,
-    temperature: Number(window.parent.vionikoaiChat?.temperature),
+    fileName: window.parent.vionikoaiChat?.fileName,
   };
 
   try {
-    // Use the new performSimilaritySearchOnDocument function
-    const similarDocs = await performSimilaritySearchOnDocument({
-      conversationId: requestData.conversationId,
-      query: userMessage,
-    });
+    previousMessages.push({ role: "user", content: userMessage });
 
-    // Store only unique and relevant context pieces
-    const uniqueContexts = new Set(similarDocs.map(doc => doc.content));
-    const context = Array.from(uniqueContexts).join("\n");
-
-    const prompt = `Use the following pieces of context to answer the question at the end. If you don't know the answer, just say that you don't know, don't try to make up an answer. Answers should be based on context and not known facts 
-    ----------------
-    CONTEXT: ${context}
-    ----------------
-    QUESTION: ${userMessage}
-    ----------------
-    Helpful Answer:`;
-
-    const extendedMessages = [
-      ...previousMessages,
-      { role: "user", content: prompt },
-    ];
-
-    let accumulatedData = "";
+    // Get response from proxy API
+    const response = await streamFromProxyApi(userMessage);
     let accumulatedContent = "";
-    const reader = await fetchResponse(
-      extendedMessages,
-      window.parent.vionikoaiChat?.userId
-    );
-    chatElement.classList.remove("loader");
 
+    // Process the stream directly
+    if (!response.body) {
+      throw new Error("ReadableStream not supported by browser.");
+    }
+
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+
+    chatElement.classList.remove("loader");
+    console.log("Beginning to read stream");
+
+    // Process chunks as they arrive
     while (true) {
       const { done, value } = await reader.read();
-      accumulatedData += new TextDecoder().decode(value);
-      const match = accumulatedData.match(/data: (.*?})\s/);
+      if (done) {
+        console.log("Stream complete");
+        break;
+      }
 
-      if (match && match[1]) {
-        let jsonData;
-        try {
-          jsonData = JSON.parse(match[1]);
-          if (jsonData.choices[0].finish_reason === "stop") {
-            window.chatCount ? window.chatCount++ : (window.chatCount = 1);
+      // Decode the chunk
+      const chunk = decoder.decode(value, { stream: true });
 
-            // Save chat history
-            await fetch(
-              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: requestData.userId,
-                  chatId: requestData.chatId,
-                  chatName: requestData.chatName,
-                  name: requestData.name,
-                  email: requestData.email,
-                  phone: requestData.phone,
-                  fileName: requestData.fileName,
-                  message: requestData.prompt,
-                  role: "user",
-                }),
-              }
-            );
+      // Process each line in the chunk
+      const lines = chunk.split("\n");
+      for (const line of lines) {
+        if (!line.trim()) continue;
 
-            await fetch(
-              "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-              {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                  userId: requestData.userId,
-                  chatId: requestData.chatId,
-                  chatName: requestData.chatName,
-                  name: requestData.name,
-                  email: requestData.email,
-                  phone: requestData.phone,
-                  fileName: requestData.fileName,
-                  message: accumulatedContent,
-                  role: "assistant",
-                }),
-              }
-            );
+        // Try to handle prefixed format (0:, f:, etc.)
+        if (line.match(/^[0fed]:/)) {
+          const prefix = line.substring(0, 2);
+          const content = line.substring(2);
 
-            break;
+          try {
+            const parsed = JSON.parse(content);
+
+            // Handle content chunks
+            if (prefix === "0:" && typeof parsed === "string") {
+              accumulatedContent += parsed;
+              messageElement.textContent = accumulatedContent;
+            }
+          } catch (parseError) {
+            console.warn(`Failed to parse ${prefix} chunk:`, content);
           }
-        } catch (error) {
-          console.error("An error occurred:", error);
-          throw error;
         }
+        // Handle standard SSE format
+        else if (line.startsWith("data: ")) {
+          try {
+            if (line.includes("data: [DONE]")) {
+              console.log("Received DONE signal");
+              continue;
+            }
 
-        const { delta } = jsonData.choices[0];
-        if (delta && delta.content) {
-          accumulatedContent += delta.content;
-          messageElement.textContent = accumulatedContent;
+            const jsonData = JSON.parse(line.substring(6));
+
+            if (jsonData.choices && jsonData.choices[0].delta?.content) {
+              const content = jsonData.choices[0].delta.content;
+              accumulatedContent += content;
+              messageElement.textContent = accumulatedContent;
+            }
+          } catch (error) {
+            // Continue if parsing fails
+          }
         }
-        accumulatedData = accumulatedData.replace(match[0], "");
+        // Try to handle raw text if no specific format is detected
+        else {
+          try {
+            // Check if it might be pure JSON
+            const jsonData = JSON.parse(line);
+            if (jsonData.text || jsonData.content) {
+              const content = jsonData.text || jsonData.content;
+              accumulatedContent += content;
+              messageElement.textContent = accumulatedContent;
+            }
+          } catch (e) {
+            // Not JSON, might be plain text
+            if (line.trim()) {
+              accumulatedContent += line;
+              messageElement.textContent = accumulatedContent;
+            }
+          }
+        }
       }
     }
+
+    // Chat is complete
+    window.chatCount ? window.chatCount++ : (window.chatCount = 1);
+
+    // Save chat history
+    await fetch(
+      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: requestData.userId,
+          chatId: requestData.chatId,
+          chatName: requestData.chatName,
+          name: requestData.name,
+          email: requestData.email,
+          phone: requestData.phone,
+          fileName: requestData.fileName,
+          message: userMessage,
+          role: "user",
+        }),
+      }
+    );
+
+    await fetch(
+      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: requestData.userId,
+          chatId: requestData.chatId,
+          chatName: requestData.chatName,
+          name: requestData.name,
+          email: requestData.email,
+          phone: requestData.phone,
+          fileName: requestData.fileName,
+          message: accumulatedContent,
+          role: "assistant",
+        }),
+      }
+    );
   } catch (error) {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";
   } finally {
-    previousMessages.push(
-      { role: "user", content: userMessage },
-      { role: "assistant", content: messageElement.textContent }
-    );
+    previousMessages.push({
+      role: "assistant",
+      content: messageElement.textContent,
+    });
     chatElement.classList.remove("loader");
   }
 };
@@ -283,7 +282,10 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
     const iframe = window.parent.document.querySelector("#vionikodiv iframe");
     try {
       if (iframe && iframe.contentWindow && !iframe.contentWindow.closed) {
-        const liveSupportContainer = iframe.contentWindow.document.getElementById("live-support-container");
+        const liveSupportContainer =
+          iframe.contentWindow.document.getElementById(
+            "live-support-container"
+          );
         if (liveSupportContainer && window.parent.vionikoaiChat?.supportType) {
           liveSupportContainer.style.display = "block";
         }
