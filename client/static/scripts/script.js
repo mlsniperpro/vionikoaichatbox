@@ -144,7 +144,14 @@ const generateResponse = async (chatElement, userMessage) => {
 
             const jsonData = JSON.parse(line.substring(6));
 
-            if (jsonData.choices && jsonData.choices[0].delta?.content) {
+            // Handle AI SDK format (text-delta)
+            if (jsonData.type === "text-delta" && jsonData.delta) {
+              const content = jsonData.delta;
+              accumulatedContent += content;
+              messageElement.textContent = accumulatedContent;
+            }
+            // Handle OpenAI format (legacy support)
+            else if (jsonData.choices && jsonData.choices[0].delta?.content) {
               const content = jsonData.choices[0].delta.content;
               accumulatedContent += content;
               messageElement.textContent = accumulatedContent;

@@ -25,7 +25,6 @@ const getTime = () => {
 // Function to stream chat responses from PDF API
 async function streamFromPDFApi(input) {
   try {
-    console.log("Starting PDF API request with message:", input);
     const requestBody = {
       messages: [{ role: "user", content: input }],
       systemPrompt: window.vionikoaiChat?.systemPrompt || "",
@@ -38,8 +37,6 @@ async function streamFromPDFApi(input) {
       language: "English",
       origin: "embedded",
     };
-    console.log("Request body:", JSON.stringify(requestBody, null, 2));
-    console.log("vionikoaiChat object:", window.vionikoaiChat);
     const response = await fetch("https://www.chatvioniko.com/api/pdf", {
       method: "POST",
       headers: {
@@ -194,7 +191,19 @@ async function getBotResponse(input) {
             const jsonData = JSON.parse(line.substring(6));
             console.log("Parsed SSE data:", jsonData);
 
-            if (jsonData.choices && jsonData.choices[0].delta?.content) {
+            // Handle AI SDK format (text-delta)
+            if (jsonData.type === "text-delta" && jsonData.delta) {
+              const content = jsonData.delta;
+              accumulatedContent += content;
+              currentMessageElement.querySelector("span").textContent =
+                accumulatedContent;
+              // Force UI update
+              window.requestAnimationFrame(() => {
+                document.getElementById("chat-bar-bottom").scrollIntoView(true);
+              });
+            }
+            // Handle OpenAI format (legacy support)
+            else if (jsonData.choices && jsonData.choices[0].delta?.content) {
               const content = jsonData.choices[0].delta.content;
               accumulatedContent += content;
               currentMessageElement.querySelector("span").textContent =
@@ -251,43 +260,57 @@ async function getBotResponse(input) {
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
 
     // Save chat history (user message and bot response)
-    await fetch(
-      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: window.vionikoaiChat?.userId,
-          chatId: window.vionikoaiChat?.chatId,
-          chatName: window.vionikoaiChat?.chatName,
-          name: window.vionikoaiChat?.name,
-          email: window.vionikoaiChat?.email,
-          phone: window.vionikoaiChat?.phone,
-          fileName: window.vionikoaiChat?.fileName,
-          message: input,
-          role: "user",
-        }),
+    try {
+      const userSaveResponse = await fetch(
+        "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: window.vionikoaiChat?.userId,
+            chatId: window.vionikoaiChat?.chatId,
+            chatName: window.vionikoaiChat?.chatName,
+            name: window.vionikoaiChat?.name,
+            email: window.vionikoaiChat?.email,
+            phone: window.vionikoaiChat?.phone,
+            fileName: window.vionikoaiChat?.fileName,
+            message: input,
+            role: "user",
+          }),
+        }
+      );
+      if (!userSaveResponse.ok) {
+        console.error("Failed to save user message:", userSaveResponse.status, await userSaveResponse.text());
       }
-    );
+    } catch (error) {
+      console.error("Error saving user message:", error);
+    }
 
-    await fetch(
-      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: window.vionikoaiChat?.userId,
-          chatId: window.vionikoaiChat?.chatId,
-          chatName: window.vionikoaiChat?.chatName,
-          name: window.vionikoaiChat?.name,
-          email: window.vionikoaiChat?.email,
-          phone: window.vionikoaiChat?.phone,
-          fileName: window.vionikoaiChat?.fileName,
-          message: accumulatedContent,
-          role: "assistant",
-        }),
+    try {
+      const assistantSaveResponse = await fetch(
+        "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: window.vionikoaiChat?.userId,
+            chatId: window.vionikoaiChat?.chatId,
+            chatName: window.vionikoaiChat?.chatName,
+            name: window.vionikoaiChat?.name,
+            email: window.vionikoaiChat?.email,
+            phone: window.vionikoaiChat?.phone,
+            fileName: window.vionikoaiChat?.fileName,
+            message: accumulatedContent,
+            role: "assistant",
+          }),
+        }
+      );
+      if (!assistantSaveResponse.ok) {
+        console.error("Failed to save assistant message:", assistantSaveResponse.status, await assistantSaveResponse.text());
       }
-    );
+    } catch (error) {
+      console.error("Error saving assistant message:", error);
+    }
   } catch (error) {
     console.error("Error in getBotResponse:", error);
     currentMessageElement.classList.remove("loader");
