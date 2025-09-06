@@ -1,50 +1,4 @@
-async function performSimilaritySearchOnDocument({ conversationId, query }) {
-  const API_URL = "https://vector-databases.fly.dev";
-  console.log("Starting similarity search with:", { conversationId, query });
 
-  // Create embedding using fetch (already using fetch)
-  const embeddingsResponse = await fetch(
-    "https://llm-functionalities.fly.dev/create-embedding",
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        input: query,
-        model: "text-embedding-3-large",
-      }),
-    }
-  );
-
-  const embeddingsData = await embeddingsResponse.json();
-  const embeddingVector = embeddingsData.embedding;
-  console.log("Generated embedding vector length:", embeddingVector.length);
-
-  // Replace axios call with fetch for Zilliz search
-  console.log("Making Zilliz search request...");
-  const response = await fetch(`${API_URL}/zilliz/search`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      collection_name: "chat",
-      //filter: `conversationId == "${conversationId}"`,  // Add explicit filter expression
-      queryVector: embeddingVector,
-      conversationId: conversationId,
-      limit: 22,
-    }),
-  });
-
-  const responseData = await response.json();
-  //console.log("Zilliz search response:", responseData);
-
-  return responseData.data.map((item) => ({
-    content: item.content,
-    pageNumber: item.pageNumber,
-  }));
-}
 
 // Replace API key handling functions with a secure proxy approach
 async function streamFromProxyApi(userMessage) {
@@ -61,10 +15,10 @@ async function streamFromProxyApi(userMessage) {
       body: JSON.stringify({
         messages: [{ role: "user", content: userMessage }],
         systemPrompt: window.parent.vionikoaiChat?.systemPrompt || "",
+        conversationId: window.parent.vionikoaiChat?.conversationId,
+        userId: window.parent.vionikoaiChat?.userId,
         data: {
-          conversationId: window.parent.vionikoaiChat?.conversationId,
           fileName: window.parent.vionikoaiChat?.fileName,
-          userId: window.parent.vionikoaiChat?.userId,
           chatId: window.parent.vionikoaiChat?.chatId,
         },
         language: "English",

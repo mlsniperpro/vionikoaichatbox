@@ -26,6 +26,20 @@ const getTime = () => {
 async function streamFromPDFApi(input) {
   try {
     console.log("Starting PDF API request with message:", input);
+    const requestBody = {
+      messages: [{ role: "user", content: input }],
+      systemPrompt: window.vionikoaiChat?.systemPrompt || "",
+      conversationId: window.vionikoaiChat?.conversationId,
+      userId: window.vionikoaiChat?.userId,
+      data: {
+        fileName: window.vionikoaiChat?.fileName,
+        chatId: window.vionikoaiChat?.chatId,
+      },
+      language: "English",
+      origin: "embedded",
+    };
+    console.log("Request body:", JSON.stringify(requestBody, null, 2));
+    console.log("vionikoaiChat object:", window.vionikoaiChat);
     const response = await fetch("https://www.chatvioniko.com/api/pdf", {
       method: "POST",
       headers: {
@@ -34,18 +48,7 @@ async function streamFromPDFApi(input) {
       },
       mode: "cors",
       credentials: "omit",
-      body: JSON.stringify({
-        messages: [{ role: "user", content: input }],
-        systemPrompt: window.vionikoaiChat?.systemPrompt || "",
-        data: {
-          conversationId: window.vionikoaiChat?.conversationId,
-          fileName: window.vionikoaiChat?.fileName,
-          userId: window.vionikoaiChat?.userId,
-          chatId: window.vionikoaiChat?.chatId,
-        },
-        language: "English",
-        origin: "embedded",
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
