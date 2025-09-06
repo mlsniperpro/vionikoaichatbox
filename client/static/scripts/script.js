@@ -149,12 +149,16 @@ const generateResponse = async (chatElement, userMessage) => {
               const content = jsonData.delta;
               accumulatedContent += content;
               messageElement.textContent = accumulatedContent;
+              // Auto-scroll during streaming
+              chatbox.scrollTop = chatbox.scrollHeight;
             }
             // Handle OpenAI format (legacy support)
             else if (jsonData.choices && jsonData.choices[0].delta?.content) {
               const content = jsonData.choices[0].delta.content;
               accumulatedContent += content;
               messageElement.textContent = accumulatedContent;
+              // Auto-scroll during streaming
+              chatbox.scrollTop = chatbox.scrollHeight;
             }
           } catch (error) {
             // Continue if parsing fails
