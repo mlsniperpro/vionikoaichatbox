@@ -11,10 +11,10 @@
 }
 
 #vionikodiv {
-  width: 420px;
+  width: min(420px, calc(100vw - 20px));
   height: calc(100% - 40px);
   max-width: 700px;
-  min-width: 360px;
+  min-width: min(360px, 100vw);
   max-height: 700px;
   right: 0;
   bottom: 0;
@@ -32,12 +32,12 @@
 #vionikodiv.closed {
   max-width: 7rem;
   max-height: 8rem;
-  width: 0.5rem;
-  height: 6.5rem;
+  width: 90px;
+  height: 90px;
   right: 0;
   bottom: 0;
   display: block;
-  position: relative;
+  position: fixed;
   opacity: 0.9;
   transform: scale(0.95);
 }
