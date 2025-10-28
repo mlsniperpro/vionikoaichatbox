@@ -47,3 +47,10 @@
   overflow: visible;
   border-radius: 0;
 }
+
+@media (max-width: 490px) {
+  #vionikodiv.closed {
+    right: 20px;
+    bottom: 20px;
+  }
+}
