@@ -30,14 +30,18 @@
 
 /* When #vionikodiv has class closed  */
 #vionikodiv.closed {
-  max-width: 7rem;
-  max-height: 8rem;
-  width: 90px;
-  height: 90px;
-  right: 0;
-  bottom: 0;
+  max-width: 56px;
+  max-height: 56px;
+  width: 56px;
+  height: 56px;
+  right: 35px;
+  bottom: 30px;
   display: block;
   position: fixed;
-  opacity: 0.9;
-  transform: scale(0.95);
+  opacity: 1;
+  transform: scale(1);
+  backdrop-filter: none;
+  box-shadow: none;
+  border: none;
+  background: transparent;
 }
