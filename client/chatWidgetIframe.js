@@ -244,12 +244,20 @@ function loadIframe() {
 
     if (chatbotToggler) {
       chatbotToggler.addEventListener("click", () => {
+        // Check if form has any input fields (excluding submit button)
+        const hasFormFields = formOverlay.querySelector('input:not([type="submit"])');
+
         if (formOverlay.style.display === "block") {
           formOverlay.style.display = "none";
           chatbot.style.display = "none";
         } else {
-          formOverlay.style.display = "block";
-          chatbot.style.display = "none";
+          // Only show form if it has fields, otherwise show chat directly
+          if (hasFormFields) {
+            formOverlay.style.display = "block";
+            chatbot.style.display = "none";
+          } else {
+            chatbot.style.display = "block";
+          }
         }
       });
     }
