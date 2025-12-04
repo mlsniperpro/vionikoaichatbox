@@ -22,14 +22,26 @@ const generateFormFields = () => {
   const chatProps = window.parent.vionikoaiChat || {};
   return ["name", "email", "phone"]
     .map((field) => {
-      const label = chatProps[field]
-        ? chatProps[field]
-        : field.charAt(0).toUpperCase() + field.slice(1);
-      return chatProps[field]
-        ? `<label for="${field}">${label}:</label><input type="${
-            field === "email" ? "email" : "text"
-          }" id="${field}" name="${field}" required>`
-        : "";
+      const fieldConfig = chatProps[field];
+
+      // Skip if field is not configured
+      if (!fieldConfig) return "";
+
+      // Support both string (label) and object { label, required } formats
+      let label, isRequired;
+      if (typeof fieldConfig === "string") {
+        label = fieldConfig;
+        isRequired = true; // Default to required if just a string
+      } else if (typeof fieldConfig === "object") {
+        label = fieldConfig.label || field.charAt(0).toUpperCase() + field.slice(1);
+        isRequired = fieldConfig.required !== false; // Default to required unless explicitly false
+      } else {
+        return "";
+      }
+
+      return `<label for="${field}">${label}:</label><input type="${
+        field === "email" ? "email" : "text"
+      }" id="${field}" name="${field}"${isRequired ? " required" : ""}>`;
     })
     .join("");
 };
@@ -37,16 +49,46 @@ const generateFormFields = () => {
 // Validate form and hide it if valid, then open chatbox
 const validateForm = (iframe) => {
   const doc = iframe.contentWindow.document;
-  const name = doc.getElementById("name")?.value;
-  const email = doc.getElementById("email")?.value;
-  const phone = doc.getElementById("phone")?.value;
-  if (name && email && phone) {
+  const chatProps = window.parent.vionikoaiChat || {};
+
+  // Get configured fields
+  const configuredFields = ["name", "email", "phone"].filter(
+    (field) => chatProps[field]
+  );
+
+  // Collect values only for configured fields
+  const formData = {};
+  let isValid = true;
+
+  configuredFields.forEach((field) => {
+    const element = doc.getElementById(field);
+    if (element) {
+      const value = element.value?.trim();
+
+      // Check if field is required
+      const fieldConfig = chatProps[field];
+      let isRequired = true;
+      if (typeof fieldConfig === "object") {
+        isRequired = fieldConfig.required !== false;
+      }
+
+      // Validate required fields
+      if (isRequired && !value) {
+        isValid = false;
+      }
+
+      // Store value if present
+      if (value) {
+        formData[field] = value;
+      }
+    }
+  });
+
+  if (isValid) {
     window.parent.vionikoaiChat = {
       ...window.parent.vionikoaiChat,
       chatId: generateRandomId(),
-      name,
-      email,
-      phone,
+      ...formData,
     };
     doc.getElementById("form-overlay").style.display = "none";
     const chatbot = doc.querySelector(".chatbot");
