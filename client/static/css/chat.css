@@ -10,7 +10,7 @@
     0 32px 64px -48px rgba(0, 0, 0, 0.5);
   transition: all 0.3s ease;
   width: 25rem;
-  z-index: 2000000000; /* Ensuring high visibility */
+  z-index: 999999; /* High but reasonable z-index */
 }
 
 /* Styling for the collapsible button */
@@ -214,23 +214,16 @@
   }
 }
 
-/* Media query for responsiveness */
-@media screen and (max-width: 768px) {
+/* Media query for responsiveness - matches iframe.css breakpoint */
+@media screen and (max-width: 490px) {
   /* Full-screen chat window */
-  /* Reset to original settings */
   .chat-bar-collapsible {
     width: 100%;
-    bottom: 1rem;
+    bottom: 0;
     position: fixed;
     right: 0;
-    border-radius: 0.5rem 0.5rem 0 0;
+    border-radius: 0;
   }
-
-  /* Hide overflow to prevent scrolling */
-  /* body {
-    overflow: hidden;
-  }
-  */
 
   /* Reset padding and margin */
   .full-chat-block,
@@ -240,14 +233,15 @@
     margin: 0;
     width: 100%;
     height: 100%;
+    border-radius: 0;
   }
 
   /* Adjusting other elements for full screen */
   .outer-container {
-    min-height: 80vh;
+    min-height: 100vh;
   }
   .chat-container {
-    max-height: 90vh;
+    max-height: 100vh;
   }
 }
 

@@ -12,14 +12,14 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 2000000001; /* Ensure the overlay is on top */
+  z-index: 1000000; /* Slightly above chat widget */
 }
 
 /* Style for the form */
 #user-form {
   background-color: #fff;
   padding: 25px;
-  border-radius: 15px;
+  border-radius: 18px;
   width: 80%;
   max-width: 400px;
   text-align: center;
@@ -71,19 +71,18 @@
   background-color: #5f3cc6;
 }
 
-/* Media query for responsiveness */
-@media (max-width: 768px) {
+/* Media query for responsiveness - matches iframe.css breakpoint */
+@media (max-width: 490px) {
   #user-form {
-    width: 90%; /* Increase width for smaller screens */
+    width: 95%;
     padding: 20px;
   }
   #user-form input,
   #user-form label {
-    font-size: 16px; /* Increase font size for better readability */
+    font-size: 16px; /* Prevents iOS zoom on focus */
   }
   #user-form input[type="submit"] {
-    width: auto;
-    min-width: 150px;
-    padding: 16px 24px; /* Increase padding for better touch area */
+    width: 100%;
+    padding: 16px 24px;
   }
 }
