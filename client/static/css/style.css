@@ -10,8 +10,8 @@
 
 .chatbot-toggler {
   position: fixed;
-  bottom: 30px;
-  right: 35px;
+  bottom: 0;
+  right: 0;
   outline: none;
   border: none;
   height: 56px;
@@ -174,8 +174,8 @@ header h2 {
 
 @media (max-width: 490px) {
   .chatbot-toggler {
-    right: 20px;
-    bottom: 20px;
+    right: 0;
+    bottom: 0;
   }
   .chatbot {
     right: 0;
