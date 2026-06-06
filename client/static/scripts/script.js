@@ -21,6 +21,12 @@ async function streamFromProxyApi(userMessage) {
           fileName: window.parent.vionikoaiChat?.fileName,
           chatId: window.parent.vionikoaiChat?.chatId,
         },
+        // Widget identity + visitor lead fields: the server persists each
+        // turn (incl. these) to the owner's /history page from onFinish.
+        chatName: window.parent.vionikoaiChat?.chatName,
+        name: window.parent.vionikoaiChat?.name,
+        email: window.parent.vionikoaiChat?.email,
+        phone: window.parent.vionikoaiChat?.phone,
         language: "English",
         origin: "embedded",
       }),
@@ -185,47 +191,12 @@ const generateResponse = async (chatElement, userMessage) => {
       }
     }
 
-    // Chat is complete
+    // Chat is complete. History (messages + lead fields) is persisted
+    // server-side by /api/pdf in onFinish — the legacy client-side
+    // saveChatAndWordCount calls were removed: they duplicated every turn
+    // (the Cloud Function push-appends with no dedupe) and were lost
+    // whenever the visitor closed the page before they fired.
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
-
-    // Save chat history
-    await fetch(
-      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: requestData.userId,
-          chatId: requestData.chatId,
-          chatName: requestData.chatName,
-          name: requestData.name,
-          email: requestData.email,
-          phone: requestData.phone,
-          fileName: requestData.fileName,
-          message: userMessage,
-          role: "user",
-        }),
-      }
-    );
-
-    await fetch(
-      "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          userId: requestData.userId,
-          chatId: requestData.chatId,
-          chatName: requestData.chatName,
-          name: requestData.name,
-          email: requestData.email,
-          phone: requestData.phone,
-          fileName: requestData.fileName,
-          message: accumulatedContent,
-          role: "assistant",
-        }),
-      }
-    );
   } catch (error) {
     console.error("An error occurred:", error);
     messageElement.textContent = "An error occurred. Please try again.";

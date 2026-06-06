@@ -34,6 +34,12 @@ async function streamFromPDFApi(input) {
         fileName: window.vionikoaiChat?.fileName,
         chatId: window.vionikoaiChat?.chatId,
       },
+      // Widget identity + visitor lead fields: the server persists each turn
+      // (incl. these) to the owner's /history page from onFinish.
+      chatName: window.vionikoaiChat?.chatName,
+      name: window.vionikoaiChat?.name,
+      email: window.vionikoaiChat?.email,
+      phone: window.vionikoaiChat?.phone,
       language: "English",
       origin: "embedded",
     };
@@ -256,61 +262,12 @@ async function getBotResponse(input) {
       content: accumulatedContent,
     });
 
-    // Chat is complete - save to history
+    // Chat is complete. History (messages + lead fields) is persisted
+    // server-side by /api/pdf in onFinish — the legacy client-side
+    // saveChatAndWordCount calls were removed: they duplicated every turn
+    // (the Cloud Function push-appends with no dedupe) and were lost
+    // whenever the visitor closed the page before they fired.
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
-
-    // Save chat history (user message and bot response)
-    try {
-      const userSaveResponse = await fetch(
-        "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: window.vionikoaiChat?.userId,
-            chatId: window.vionikoaiChat?.chatId,
-            chatName: window.vionikoaiChat?.chatName,
-            name: window.vionikoaiChat?.name,
-            email: window.vionikoaiChat?.email,
-            phone: window.vionikoaiChat?.phone,
-            fileName: window.vionikoaiChat?.fileName,
-            message: input,
-            role: "user",
-          }),
-        }
-      );
-      if (!userSaveResponse.ok) {
-        console.error("Failed to save user message:", userSaveResponse.status, await userSaveResponse.text());
-      }
-    } catch (error) {
-      console.error("Error saving user message:", error);
-    }
-
-    try {
-      const assistantSaveResponse = await fetch(
-        "https://us-central1-vioniko-82fcb.cloudfunctions.net/saveChatAndWordCount",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            userId: window.vionikoaiChat?.userId,
-            chatId: window.vionikoaiChat?.chatId,
-            chatName: window.vionikoaiChat?.chatName,
-            name: window.vionikoaiChat?.name,
-            email: window.vionikoaiChat?.email,
-            phone: window.vionikoaiChat?.phone,
-            fileName: window.vionikoaiChat?.fileName,
-            message: accumulatedContent,
-            role: "assistant",
-          }),
-        }
-      );
-      if (!assistantSaveResponse.ok) {
-        console.error("Failed to save assistant message:", assistantSaveResponse.status, await assistantSaveResponse.text());
-      }
-    } catch (error) {
-      console.error("Error saving assistant message:", error);
-    }
   } catch (error) {
     console.error("Error in getBotResponse:", error);
     currentMessageElement.classList.remove("loader");
