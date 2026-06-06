@@ -1,5 +1,6 @@
-/* Import Google font - Poppins */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+/* Poppins is linked directly from the document head (see chatWidget.js)
+   instead of @import'd here, so the font request isn't serialized behind
+   this stylesheet's download. */
 
 /* Base styling for the chat bar */
 .chat-bar-collapsible {
@@ -99,6 +100,23 @@
 /* Hide scrollbar for Webkit browsers */
 .chat-container::-webkit-scrollbar {
   display: none;
+}
+
+/* The message list scrolls internally. Previously messages overflowed the
+   collapsible's max-height (long chats were clipped) and the script
+   scrolled the HOST page into view on every streamed chunk. */
+.chat-container .chatbox {
+  max-height: 320px;
+  overflow-y: auto;
+  padding: 10px 0 16px;
+  scrollbar-width: thin;
+}
+.chat-container .chatbox::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-container .chatbox::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 25px;
 }
 
 /* Styling for the chat bar input block */
@@ -278,6 +296,12 @@
   animation: typing-dots 1.8s ease-in-out infinite;
 }
 
+/* Staged loader copy: applied by chat.js when the response is slow,
+   so a long retrieval doesn't read as a hang */
+.loader.slow::after {
+  content: 'Still working on it…';
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -330,8 +354,51 @@
   margin-right: 12px;
   display: flex;
   float: right;
+  white-space: pre-wrap; /* preserve line breaks in the visitor's message */
+  text-align: left;
   box-shadow: 0 2px 16px rgba(114, 74, 232, 0.25);
   transition: all 0.2s ease;
+}
+
+/* Markdown content inside bot bubbles (.md is set by renderBotText) */
+.botText span.md {
+  display: block; /* flex would lay block children out in a row */
+  width: fit-content;
+  white-space: normal;
+}
+.botText span.md p {
+  margin: 0 0 8px;
+}
+.botText span.md p:last-child {
+  margin-bottom: 0;
+}
+.botText span.md ul,
+.botText span.md ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.botText span.md li {
+  margin: 2px 0;
+}
+.botText span.md a {
+  color: #5f3cc6;
+}
+.botText span.md code {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.botText span.md pre {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.botText span.md pre code {
+  background: none;
+  padding: 0;
 }
 
 .input-box.disabled {

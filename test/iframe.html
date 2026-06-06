@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Iframe variant e2e</title>
+  </head>
+  <body>
+    <h1>Host page — iframe variant</h1>
+    <div style="height: 1800px; background: linear-gradient(#eef, #dde)"></div>
+    <p id="page-bottom">bottom of host page</p>
+    <script type="application/javascript">
+      window.vionikoaiChat = {
+        userId: "fcJAePkUVwV7fBR3uiGh5iyt2Tf1",
+        conversationId: "213a17aa-7f03-4646-b689-8fcad9ab8b84",
+        fileName: "213a17aa-7f03-4646-b689-8fcad9ab8b84",
+        systemPrompt:
+          'I want you to act as a friendly and helpful support agent named "Asistente Virtual". Provide informative and warm answers in a conversational tone. Always give your answers in Spanish. Never break character.',
+        temperature: "0.6",
+        supportType: "Whatsapp",
+        supportContact: "+254713727575",
+        submit: "Click p/Chatear",
+        phone: "Whatsapp",
+        email: "Email",
+        name: "Nombre",
+        firstMessage: "Dudas respecto IMM",
+        inputPlaceholder: "Aqui pones tu Duda ...",
+        chatName: "Tu Asesor Virtual IMM",
+        supportLabel: "Dudas via WhatsApp Clic",
+      };
+      (function (d, s, id) {
+        var js,
+          fjs = d.getElementsByTagName(s)[0];
+        if (d.getElementById(id)) return;
+        js = d.createElement(s);
+        js.id = id;
+        js.async = true;
+        js.src =
+          "https://mlsniperpro.github.io/vionikoaichatbox/client/chatWidgetIframe.js";
+        fjs.parentNode.insertBefore(js, fjs);
+      })(document, "script", "vionikoaiChat-jssdk");
+    </script>
+  </body>
+</html>

@@ -1,5 +1,6 @@
-/* Import Google font - Poppins */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+/* Poppins is linked directly from the document head (see the widget
+   loaders) instead of @import'd here, so the font request isn't
+   serialized behind this stylesheet's download. */
 
 /* Style for the form overlay */
 .form-overlay {

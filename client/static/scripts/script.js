@@ -1,9 +1,39 @@
+// True while a response is streaming; blocks concurrent sends
+let isGenerating = false;
 
+// Render bot text as sanitized markdown when the libraries are available,
+// falling back to plain text otherwise. User text is never rendered as
+// HTML — see createChatLi.
+const renderBotText = (element, text) => {
+  if (window.marked && window.DOMPurify) {
+    element.classList.add("md");
+    element.innerHTML = window.DOMPurify.sanitize(
+      window.marked.parse(text, { breaks: true }),
+      // Text-only chat: no images/media (echoed user input must never
+      // produce a network request), no svg/math (sanitizer bypass vectors)
+      { USE_PROFILES: { html: true }, FORBID_TAGS: ["img", "svg", "math", "style"] }
+    );
+    // Links must not navigate the chat iframe
+    element.querySelectorAll("a").forEach((a) => {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+    });
+  } else {
+    element.textContent = text;
+  }
+};
 
-// Replace API key handling functions with a secure proxy approach
-async function streamFromProxyApi(userMessage) {
+// Keep the chatbox pinned to the bottom only while the user hasn't
+// scrolled up to re-read earlier messages.
+const isNearBottom = (el) =>
+  el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+const scrollToBottom = (el) => {
+  el.scrollTop = el.scrollHeight;
+};
+
+// Stream chat responses through the secure proxy API
+async function streamFromProxyApi(userMessage, signal) {
   try {
-    console.log("Starting proxy API request with message:", userMessage);
     const response = await fetch("https://www.chatvioniko.com/api/pdf", {
       method: "POST",
       headers: {
@@ -12,6 +42,7 @@ async function streamFromProxyApi(userMessage) {
       },
       mode: "cors",
       credentials: "omit",
+      signal,
       body: JSON.stringify({
         messages: [{ role: "user", content: userMessage }],
         systemPrompt: window.parent.vionikoaiChat?.systemPrompt || "",
@@ -36,7 +67,6 @@ async function streamFromProxyApi(userMessage) {
       throw new Error(`API responded with HTTP ${response.status}`);
     }
 
-    console.log("Proxy API response received, status:", response.status);
     return response; // Return the full response
   } catch (error) {
     console.error("Error streaming chat response:", error);
@@ -64,36 +94,39 @@ const scrollPadding = document.createElement("div");
 // Add a padding element to the chatbox
 scrollPadding.style.height = "50px"; // Adjust this value based on your input box height
 chatbox.appendChild(scrollPadding);
+
 // ## Create Chat Element
-// Function to create a new chat element
+// Function to create a new chat element. Uses textContent so user input
+// is never injected as HTML (XSS).
 const createChatLi = (message, className) => {
   const chatLi = document.createElement("li");
   chatLi.classList.add("chat", className);
-  const chatContent = className === "outgoing" ? "<p></p>" : "<p></p>";
-  chatLi.innerHTML = chatContent;
-  chatLi.querySelector("p").textContent = message;
+  const p = document.createElement("p");
+  p.textContent = message;
+  chatLi.appendChild(p);
   return chatLi;
 };
 
 // Function to generate a chat response from the server - updated to use proxy
 const generateResponse = async (chatElement, userMessage) => {
   const messageElement = chatElement.querySelector("p");
-  const requestData = {
-    conversationId: window.parent.vionikoaiChat?.conversationId,
-    userId: window.parent.vionikoaiChat?.userId,
-    chatId: window.parent.vionikoaiChat?.chatId,
-    chatName: window.parent.vionikoaiChat?.chatName,
-    name: window.parent.vionikoaiChat?.name,
-    email: window.parent.vionikoaiChat?.email,
-    phone: window.parent.vionikoaiChat?.phone,
-    fileName: window.parent.vionikoaiChat?.fileName,
+  // After a few seconds, switch the loader copy (see .loader.slow in CSS)
+  const slowTimer = setTimeout(() => chatElement.classList.add("slow"), 6000);
+
+  // Abort if the stream stalls: no data at all for 45 seconds
+  const controller = new AbortController();
+  let watchdog = setTimeout(() => controller.abort(), 45000);
+  const resetWatchdog = () => {
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => controller.abort(), 45000);
   };
 
+  isGenerating = true;
   try {
     previousMessages.push({ role: "user", content: userMessage });
 
     // Get response from proxy API
-    const response = await streamFromProxyApi(userMessage);
+    const response = await streamFromProxyApi(userMessage, controller.signal);
     let accumulatedContent = "";
 
     // Process the stream directly
@@ -104,16 +137,19 @@ const generateResponse = async (chatElement, userMessage) => {
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
 
-    chatElement.classList.remove("loader");
-    console.log("Beginning to read stream");
+    chatElement.classList.remove("loader", "slow");
+
+    const renderChunk = () => {
+      const stick = isNearBottom(chatbox);
+      renderBotText(messageElement, accumulatedContent);
+      if (stick) scrollToBottom(chatbox);
+    };
 
     // Process chunks as they arrive
     while (true) {
       const { done, value } = await reader.read();
-      if (done) {
-        console.log("Stream complete");
-        break;
-      }
+      if (done) break;
+      resetWatchdog();
 
       // Decode the chunk
       const chunk = decoder.decode(value, { stream: true });
@@ -123,68 +159,51 @@ const generateResponse = async (chatElement, userMessage) => {
       for (const line of lines) {
         if (!line.trim()) continue;
 
-        // Try to handle prefixed format (0:, f:, etc.)
+        // Prefixed format (0:, f:, etc.)
         if (line.match(/^[0fed]:/)) {
           const prefix = line.substring(0, 2);
           const content = line.substring(2);
-
           try {
             const parsed = JSON.parse(content);
-
-            // Handle content chunks
             if (prefix === "0:" && typeof parsed === "string") {
               accumulatedContent += parsed;
-              messageElement.textContent = accumulatedContent;
+              renderChunk();
             }
           } catch (parseError) {
-            console.warn(`Failed to parse ${prefix} chunk:`, content);
+            // Ignore malformed protocol chunks
           }
         }
-        // Handle standard SSE format
+        // Standard SSE format
         else if (line.startsWith("data: ")) {
           try {
-            if (line.includes("data: [DONE]")) {
-              console.log("Received DONE signal");
-              continue;
-            }
-
+            if (line.includes("data: [DONE]")) continue;
             const jsonData = JSON.parse(line.substring(6));
-
-            // Handle AI SDK format (text-delta)
+            // AI SDK format (text-delta)
             if (jsonData.type === "text-delta" && jsonData.delta) {
-              const content = jsonData.delta;
-              accumulatedContent += content;
-              messageElement.textContent = accumulatedContent;
-              // Auto-scroll during streaming
-              chatbox.scrollTop = chatbox.scrollHeight;
+              accumulatedContent += jsonData.delta;
+              renderChunk();
             }
-            // Handle OpenAI format (legacy support)
+            // OpenAI format (legacy support)
             else if (jsonData.choices && jsonData.choices[0].delta?.content) {
-              const content = jsonData.choices[0].delta.content;
-              accumulatedContent += content;
-              messageElement.textContent = accumulatedContent;
-              // Auto-scroll during streaming
-              chatbox.scrollTop = chatbox.scrollHeight;
+              accumulatedContent += jsonData.choices[0].delta.content;
+              renderChunk();
             }
           } catch (error) {
-            // Continue if parsing fails
+            // Ignore unparseable SSE lines
           }
         }
-        // Try to handle raw text if no specific format is detected
+        // Raw text fallback when no specific format is detected
         else {
           try {
-            // Check if it might be pure JSON
             const jsonData = JSON.parse(line);
             if (jsonData.text || jsonData.content) {
-              const content = jsonData.text || jsonData.content;
-              accumulatedContent += content;
-              messageElement.textContent = accumulatedContent;
+              accumulatedContent += jsonData.text || jsonData.content;
+              renderChunk();
             }
           } catch (e) {
-            // Not JSON, might be plain text
             if (line.trim()) {
               accumulatedContent += line;
-              messageElement.textContent = accumulatedContent;
+              renderChunk();
             }
           }
         }
@@ -199,21 +218,28 @@ const generateResponse = async (chatElement, userMessage) => {
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
   } catch (error) {
     console.error("An error occurred:", error);
-    messageElement.textContent = "An error occurred. Please try again.";
+    messageElement.textContent =
+      error.name === "AbortError"
+        ? "The response took too long. Please try sending your message again."
+        : "An error occurred. Please try again.";
   } finally {
+    clearTimeout(slowTimer);
+    clearTimeout(watchdog);
+    isGenerating = false;
     previousMessages.push({
       role: "assistant",
       content: messageElement.textContent,
     });
-    chatElement.classList.remove("loader");
+    chatElement.classList.remove("loader", "slow");
   }
 };
 
 // ## Handle Chat
 // Function to handle chat interactions
 const handleChat = async (chatInput, chatbox, inputInitHeight) => {
+  if (isGenerating) return; // one in-flight response at a time
+
   if (window.chatCount >= 3) {
-    console.log("I am now running because window.chatCount is greater than 3");
     // Access live-support-container within the iframe context
     const iframe = window.parent.document.querySelector("#vionikodiv iframe");
     try {
@@ -227,7 +253,7 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
         }
       }
     } catch (e) {
-      console.log("Could not access iframe content - it may not be loaded yet");
+      // Iframe content may not be accessible yet
     }
   }
   const userMessage = chatInput.value.trim();
@@ -235,22 +261,19 @@ const handleChat = async (chatInput, chatbox, inputInitHeight) => {
   chatInput.value = "";
   chatInput.style.height = `${inputInitHeight}px`;
   chatbox.appendChild(createChatLi(userMessage, "outgoing"));
-  chatbox.scrollTop = chatbox.scrollHeight;
+  scrollToBottom(chatbox);
   const incomingChatLi = createChatLi("", "incoming");
   incomingChatLi.classList.add("loader");
   chatbox.appendChild(incomingChatLi);
-  chatbox.scrollTop = chatbox.scrollHeight;
+  scrollToBottom(chatbox);
   await generateResponse(incomingChatLi, userMessage);
 };
 
 // ## Event Listeners
 // Attach event listeners to DOM elements
 document.addEventListener("DOMContentLoaded", () => {
-  /*Now let us select an element with the id vionikoid for later */
   const vionikoid = window.parent.document.getElementById("vionikodiv");
-  if (vionikoid) {
-    console.log("I found the element with the id vionikoid");
-  } else {
+  if (!vionikoid) {
     console.error("Element with ID 'vionikodiv' not found");
   }
   chatInput.addEventListener("input", () => {
@@ -268,9 +291,23 @@ document.addEventListener("DOMContentLoaded", () => {
   sendChatBtn.addEventListener("click", () =>
     handleChat(chatInput, chatbox, inputInitHeight)
   );
-  closeBtn.addEventListener("click", () => {
+  // Keyboard activation for the send control (it's a span, not a button)
+  sendChatBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      handleChat(chatInput, chatbox, inputInitHeight);
+    }
+  });
+  const closeChat = () => {
     document.body.classList.remove("show-chatbot");
     vionikoid.classList.toggle("closed");
+  };
+  closeBtn.addEventListener("click", closeChat);
+  closeBtn.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" || e.key === " ") {
+      e.preventDefault();
+      closeChat();
+    }
   });
   chatbotToggler.addEventListener("click", () => {
     document.body.classList.toggle("show-chatbot");

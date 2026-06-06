@@ -93,6 +93,8 @@ const validateForm = (iframe) => {
     doc.getElementById("form-overlay").style.display = "none";
     const chatbot = doc.querySelector(".chatbot");
     chatbot.style.display = "block";
+    // Let the visitor start typing immediately
+    doc.querySelector(".chat-input textarea")?.focus();
   }
 };
 
@@ -110,7 +112,10 @@ function loadIframe() {
   const iframe = document.createElement("iframe");
   iframe.setAttribute("frameborder", "0");
   iframe.setAttribute("border", "0");
-  iframe.setAttribute("title", "Vionikaio Chat");
+  iframe.setAttribute(
+    "title",
+    window?.parent?.vionikoaiChat?.chatName || "Vioniko Chat"
+  );
 
   const formFields = generateFormFields();
   const liveSupportButtonHTML = `
@@ -130,7 +135,14 @@ function loadIframe() {
   <html lang="en" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>Chatbot in JavaScript | CodingNepal</title>
+    <title>${window.parent.vionikoaiChat?.chatName || "Vioniko Chat"}</title>
+    <!-- Warm up the chat API origin so the first message skips DNS+TLS -->
+    <link rel="preconnect" href="https://www.chatvioniko.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <!-- Poppins linked directly so the font isn't serialized behind the stylesheet -->
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
     <style>
@@ -208,38 +220,41 @@ function loadIframe() {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
+    <!-- Markdown libs load async and never block the chat; script.js falls
+         back to plain text rendering until they are available -->
+    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.8/dist/purify.min.js" async></script>
     <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
-  <button class="chatbot-toggler">
-      <span class="material-symbols-rounded">mode_comment</span>
-      <span class="material-symbols-outlined">close</span>
+  <button class="chatbot-toggler" aria-label="Open chat">
+      <span class="material-symbols-rounded" aria-hidden="true">mode_comment</span>
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
     </button>
     <div class="chatbot-container">
-      ${
-        shouldShowSupportButton
-          ? window.parent.vionikoaiChat.supportType && liveSupportButtonHTML
-          : ""
-      }
+      ${shouldShowSupportButton ? liveSupportButtonHTML : ""}
       <div class="chatbot">
         <header>
           <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
-          <span class="close-btn material-symbols-outlined" style="cursor: pointer; transition: opacity 0.2s ease;">close</span>
+          <span class="close-btn material-symbols-outlined" role="button" tabindex="0" aria-label="Close chat" style="cursor: pointer; transition: opacity 0.2s ease;">close</span>
         </header>
-        <ul class="chatbox">
+        <ul class="chatbox" role="log" aria-live="polite">
           <!-- Chat messages will be appended here -->
         </ul>
         <div class="chat-input">
-          <textarea 
+          <textarea
             placeholder="${
               window.parent.vionikoaiChat?.inputPlaceholder ||
               "Type a message..."
-            }" 
-            spellcheck="false" 
+            }"
+            spellcheck="false"
             required
             style="font-family: 'Poppins', sans-serif; font-size: 0.95rem;"
           ></textarea>
-          <span id="send-btn" class="material-symbols-rounded" style="color: #724ae8; transition: transform 0.2s ease;">send</span>
+          <span id="send-btn" class="material-symbols-rounded" role="button" tabindex="0" aria-label="Send message" style="color: #724ae8; transition: transform 0.2s ease;">send</span>
+        </div>
+        <div class="branding">
+          <a href="https://www.chatvioniko.com" target="_blank" rel="noopener noreferrer">Powered by Vioniko</a>
         </div>
       </div>
       <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
@@ -266,8 +281,11 @@ function loadIframe() {
     const chatbot = doc.querySelector(".chatbot");
     const liveSupportButton = doc.getElementById("live-support-button");
     const dismissButton = doc.getElementById("dismiss-live-support");
-    const supportNumber =
-      window.parent.vionikoaiChat.supportContact || "15035833307"; // Replace with your actual support number
+    // No fallback contact: if none is configured, the button stays inert/hidden
+    const supportNumber = window.parent.vionikoaiChat?.supportContact;
+    const supportType = (
+      window.parent.vionikoaiChat?.supportType || ""
+    ).toLowerCase();
 
     if (form) {
       form.addEventListener("submit", (e) => {
@@ -289,26 +307,33 @@ function loadIframe() {
           if (hasFormFields) {
             formOverlay.style.display = "block";
             chatbot.style.display = "none";
+            // Focus the first form field so the visitor can type right away
+            formOverlay.querySelector('input:not([type="submit"])')?.focus();
           } else {
             chatbot.style.display = "block";
+            doc.querySelector(".chat-input textarea")?.focus();
           }
         }
       });
     }
 
-    if (liveSupportButton) {
+    if (liveSupportButton && supportNumber) {
       liveSupportButton.addEventListener("click", () => {
-        if (window.parent.vionikoaiChat.supportType === "whatsapp") {
+        if (supportType === "whatsapp") {
           window.parent.open(
             `https://api.whatsapp.com/send?phone=${supportNumber}`,
             "_blank"
           );
-        } else if (window.parent.vionikoaiChat.supportType === "telegram") {
+        } else if (supportType === "telegram") {
           window.parent.open(`https://t.me/${supportNumber}`, "_blank");
         } else {
           window.parent.open(`${supportNumber}`, "_blank");
         }
       });
+    } else if (liveSupportButton) {
+      // Misconfigured (type but no contact): never show the button
+      const container = doc.getElementById("live-support-container");
+      if (container) container.style.display = "none";
     }
 
     if (dismissButton) {

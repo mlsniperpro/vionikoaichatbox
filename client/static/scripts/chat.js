@@ -6,12 +6,52 @@ const previousMessages = [
   },
 ];
 
-// Function to append messages to the chatbox
+// True while a response is streaming; blocks concurrent sends
+let isGenerating = false;
+
+// Render bot text as sanitized markdown when the libraries are available,
+// falling back to plain text otherwise. User text is never rendered as
+// HTML — see appendMessage.
+const renderBotText = (element, text) => {
+  if (window.marked && window.DOMPurify) {
+    element.classList.add("md");
+    element.innerHTML = window.DOMPurify.sanitize(
+      window.marked.parse(text, { breaks: true }),
+      // Text-only chat: no images/media (echoed user input must never
+      // produce a network request), no svg/math (sanitizer bypass vectors)
+      { USE_PROFILES: { html: true }, FORBID_TAGS: ["img", "svg", "math", "style"] }
+    );
+    // Links must not navigate the embedding page
+    element.querySelectorAll("a").forEach((a) => {
+      a.target = "_blank";
+      a.rel = "noopener noreferrer";
+    });
+  } else {
+    element.textContent = text;
+  }
+};
+
+// Keep the chatbox pinned to the bottom only while the user hasn't
+// scrolled up to re-read earlier messages.
+const isNearBottom = (el) =>
+  el.scrollHeight - el.scrollTop - el.clientHeight < 80;
+const scrollToBottom = (el) => {
+  el.scrollTop = el.scrollHeight;
+};
+
+// Function to append messages to the chatbox. Uses textContent so user
+// input is never injected as HTML (XSS).
 const appendMessage = (message, type) => {
   const chatbox = document.getElementById("chatbox");
-  const parsedMessage = message;
-  const messageHTML = `<p class="${type}Text"><span>${parsedMessage}</span></p>`;
-  chatbox.insertAdjacentHTML("beforeend", messageHTML);
+  const stick = isNearBottom(chatbox);
+  const p = document.createElement("p");
+  p.className = `${type}Text`;
+  const span = document.createElement("span");
+  span.textContent = message;
+  p.appendChild(span);
+  chatbox.appendChild(p);
+  if (stick) scrollToBottom(chatbox);
+  return p;
 };
 
 // Function to get the current time in HH:MM format
@@ -23,7 +63,7 @@ const getTime = () => {
 };
 
 // Function to stream chat responses from PDF API
-async function streamFromPDFApi(input) {
+async function streamFromPDFApi(input, signal) {
   try {
     const requestBody = {
       messages: [{ role: "user", content: input }],
@@ -51,6 +91,7 @@ async function streamFromPDFApi(input) {
       },
       mode: "cors",
       credentials: "omit",
+      signal,
       body: JSON.stringify(requestBody),
     });
 
@@ -58,7 +99,6 @@ async function streamFromPDFApi(input) {
       throw new Error(`API responded with HTTP ${response.status}`);
     }
 
-    console.log("PDF API response received, status:", response.status);
     return response;
   } catch (error) {
     console.error("Error streaming chat response:", error);
@@ -72,184 +112,150 @@ document.addEventListener("click", (e) => {
     if (t.classList.contains("collapsible")) {
       t.classList.toggle("active");
       const c = t.nextElementSibling;
-      c.style.maxHeight = c.style.maxHeight ? null : `${c.scrollHeight}px`;
+      const opening = !c.style.maxHeight;
+      c.style.maxHeight = opening ? `${c.scrollHeight}px` : null;
+      if (opening) {
+        // Let the visitor start typing immediately (unless the lead
+        // form still gates the input)
+        const input = document.getElementById("textInput");
+        if (input && !input.disabled) input.focus();
+      }
       return;
     }
   }
 });
 
 // Text input event listener
-document.getElementById("textInput").addEventListener("keypress", (e) => {
+document.getElementById("textInput").addEventListener("keydown", (e) => {
   if (e.key === "Enter") {
+    e.preventDefault();
     getResponse();
   }
 });
 
 // Initialize the chatbox with the first bot message
 const firstBotMessage = () => {
-  document.getElementById("botStarterMessage").innerHTML = `
-    <p class="botText"><span>${
-      window.vionikoaiChat.firstMessage || "Say Something..."
-    }</span></p>`;
+  const starter = document.getElementById("botStarterMessage");
+  starter.textContent = "";
+  const span = document.createElement("span");
+  span.textContent = window.vionikoaiChat?.firstMessage || "Say Something...";
+  starter.appendChild(span);
   document.getElementById("chat-timestamp").append(getTime());
-  document.getElementById("userInput").scrollIntoView(false);
 };
 
 // Function to get bot response
 const getResponse = async () => {
+  if (isGenerating) return; // one in-flight response at a time
+  const inputEl = document.getElementById("textInput");
+  const userText = inputEl.value.trim();
+  if (!userText) return;
+
   if (window.chatCount >= 3) {
-    document.getElementById("chat-live-support").style.display !== "block" &&
-      (document.getElementById("chat-live-support").style.display = "block");
+    const liveSupport = document.getElementById("chat-live-support");
+    if (liveSupport && liveSupport.style.display !== "block") {
+      liveSupport.style.display = "block";
+    }
   }
-  const userText = document.getElementById("textInput").value;
+
   appendMessage(userText, "user");
-  document.getElementById("textInput").value = "";
-  document.getElementById("chat-bar-bottom").scrollIntoView(true);
+  inputEl.value = "";
   await getBotResponse(userText);
 };
 
-// Function to send text with a button
-const buttonSendText = (sampleText) => {
-  document.getElementById("textInput").value = "";
-  document.getElementById("chat-bar-bottom").scrollIntoView(true);
-};
-
-// Updated function to get bot response from the PDF API - simplified to not track history in client
+// Get the bot response from the PDF API, streaming it into the chatbox
 async function getBotResponse(input) {
-  appendMessage("", "bot");
-  const currentMessageElement =
-    document.getElementById("chatbox").lastElementChild;
-  currentMessageElement.classList.add("loader");
+  const chatbox = document.getElementById("chatbox");
+  const botMessage = appendMessage("", "bot");
+  const messageSpan = botMessage.querySelector("span");
+  botMessage.classList.add("loader");
+  // After a few seconds, switch the loader copy (see .loader.slow in CSS)
+  const slowTimer = setTimeout(() => botMessage.classList.add("slow"), 6000);
 
+  // Abort if the stream stalls: no data at all for 45 seconds
+  const controller = new AbortController();
+  let watchdog = setTimeout(() => controller.abort(), 45000);
+  const resetWatchdog = () => {
+    clearTimeout(watchdog);
+    watchdog = setTimeout(() => controller.abort(), 45000);
+  };
+
+  isGenerating = true;
   try {
-    // Add the user message to previous messages
     previousMessages.push({ role: "user", content: input });
 
-    // Just pass the current user input to the API
-    const response = await streamFromPDFApi(input);
+    const response = await streamFromPDFApi(input, controller.signal);
     let accumulatedContent = "";
 
-    // Process the stream directly
     if (!response.body) {
       throw new Error("ReadableStream not supported by browser.");
     }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
+    botMessage.classList.remove("loader", "slow");
 
-    currentMessageElement.classList.remove("loader");
-    console.log("Beginning to read stream");
+    const renderChunk = () => {
+      const stick = isNearBottom(chatbox);
+      renderBotText(messageSpan, accumulatedContent);
+      if (stick) scrollToBottom(chatbox);
+    };
 
     // Process chunks as they arrive
     while (true) {
       const { done, value } = await reader.read();
-      if (done) {
-        console.log("Stream complete");
-        break;
-      }
+      if (done) break;
+      resetWatchdog();
 
-      // Decode the chunk and log for debugging
       const chunk = decoder.decode(value, { stream: true });
-      console.log("Raw chunk received:", chunk);
-
-      // Process each line in the chunk
       const lines = chunk.split("\n");
       for (const line of lines) {
         if (!line.trim()) continue;
 
-        console.log("Processing line:", line);
-
-        // Try to handle prefixed format (0:, f:, etc.)
+        // Prefixed format (0:, f:, etc.)
         if (line.match(/^[0fed]:/)) {
           const prefix = line.substring(0, 2);
           const content = line.substring(2);
-
           try {
             const parsed = JSON.parse(content);
-            console.log(`Parsed ${prefix} content:`, parsed);
-
-            // Handle content chunks
             if (prefix === "0:" && typeof parsed === "string") {
               accumulatedContent += parsed;
-              currentMessageElement.querySelector("span").textContent =
-                accumulatedContent;
-              // Force UI update
-              window.requestAnimationFrame(() => {
-                document.getElementById("chat-bar-bottom").scrollIntoView(true);
-              });
+              renderChunk();
             }
           } catch (parseError) {
-            console.warn(
-              `Failed to parse ${prefix} chunk:`,
-              content,
-              parseError
-            );
+            // Ignore malformed protocol chunks
           }
         }
-        // Handle standard SSE format
+        // Standard SSE format
         else if (line.startsWith("data: ")) {
           try {
-            if (line.includes("data: [DONE]")) {
-              console.log("Received DONE signal");
-              continue;
-            }
-
+            if (line.includes("data: [DONE]")) continue;
             const jsonData = JSON.parse(line.substring(6));
-            console.log("Parsed SSE data:", jsonData);
-
-            // Handle AI SDK format (text-delta)
+            // AI SDK format (text-delta)
             if (jsonData.type === "text-delta" && jsonData.delta) {
-              const content = jsonData.delta;
-              accumulatedContent += content;
-              currentMessageElement.querySelector("span").textContent =
-                accumulatedContent;
-              // Force UI update
-              window.requestAnimationFrame(() => {
-                document.getElementById("chat-bar-bottom").scrollIntoView(true);
-              });
+              accumulatedContent += jsonData.delta;
+              renderChunk();
             }
-            // Handle OpenAI format (legacy support)
+            // OpenAI format (legacy support)
             else if (jsonData.choices && jsonData.choices[0].delta?.content) {
-              const content = jsonData.choices[0].delta.content;
-              accumulatedContent += content;
-              currentMessageElement.querySelector("span").textContent =
-                accumulatedContent;
-              // Force UI update
-              window.requestAnimationFrame(() => {
-                document.getElementById("chat-bar-bottom").scrollIntoView(true);
-              });
+              accumulatedContent += jsonData.choices[0].delta.content;
+              renderChunk();
             }
           } catch (error) {
-            console.warn("Failed to parse SSE data:", line, error);
+            // Ignore unparseable SSE lines
           }
         }
-        // Try to handle raw text if no specific format is detected
+        // Raw text fallback when no specific format is detected
         else {
           try {
-            // Check if it might be pure JSON
             const jsonData = JSON.parse(line);
-            console.log("Parsed raw JSON:", jsonData);
             if (jsonData.text || jsonData.content) {
-              const content = jsonData.text || jsonData.content;
-              accumulatedContent += content;
-              currentMessageElement.querySelector("span").textContent =
-                accumulatedContent;
-              // Force UI update
-              window.requestAnimationFrame(() => {
-                document.getElementById("chat-bar-bottom").scrollIntoView(true);
-              });
+              accumulatedContent += jsonData.text || jsonData.content;
+              renderChunk();
             }
           } catch (e) {
-            // Not JSON, might be plain text
-            console.log("Treating as plain text");
             if (line.trim()) {
               accumulatedContent += line;
-              currentMessageElement.querySelector("span").textContent =
-                accumulatedContent;
-              // Force UI update
-              window.requestAnimationFrame(() => {
-                document.getElementById("chat-bar-bottom").scrollIntoView(true);
-              });
+              renderChunk();
             }
           }
         }
@@ -270,16 +276,21 @@ async function getBotResponse(input) {
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
   } catch (error) {
     console.error("Error in getBotResponse:", error);
-    currentMessageElement.classList.remove("loader");
-    currentMessageElement.querySelector("span").textContent =
-      "An error occurred. Please try again later.";
-    document.getElementById("chat-bar-bottom").scrollIntoView(true);
+    botMessage.classList.remove("loader", "slow");
+    messageSpan.textContent =
+      error.name === "AbortError"
+        ? "The response took too long. Please try sending your message again."
+        : "An error occurred. Please try again later.";
 
     // If there's an error, we should still add the error message to the history
     previousMessages.push({
       role: "assistant",
-      content: "An error occurred. Please try again later.",
+      content: messageSpan.textContent,
     });
+  } finally {
+    clearTimeout(slowTimer);
+    clearTimeout(watchdog);
+    isGenerating = false;
   }
 }
 

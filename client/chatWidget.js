@@ -1,6 +1,27 @@
+// Warm up connections early: the chat API origin (saves DNS+TLS on the
+// visitor's first message) and the font/CDN origins used below.
+const addPreconnects = () => {
+  const origins = [
+    "https://www.chatvioniko.com",
+    "https://fonts.googleapis.com",
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
+  ];
+  origins.forEach((href) => {
+    const link = document.createElement("link");
+    link.rel = "preconnect";
+    link.href = href;
+    link.crossOrigin = "anonymous";
+    document.head.appendChild(link);
+  });
+};
+
 // Load required stylesheets
 const loadStyles = () => {
   const styles = [
+    // Poppins is linked directly (not @import'd from the CSS) so the font
+    // request isn't serialized behind the stylesheet download.
+    "https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap",
     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/chat.css",
     "https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css",
   ];
@@ -125,6 +146,7 @@ const validateForm = () => {
     document.getElementById("form-overlay").style.display = "none";
     chatInput.classList.remove("disabled");
     chatInput.removeAttribute("disabled"); // Enable the input again
+    chatInput.focus(); // let the visitor start typing immediately
   }
 };
 
@@ -143,7 +165,7 @@ const appendChatHTML = () => {
   const liveSupportButton = `
     <div class="live-support-container" style="position: fixed; bottom: 20px; right: 20px; display: flex; z-index: 1000; font-family: 'Poppins', sans-serif;">
       <button id="live-support-button" class="live-support-button" aria-label="Live Support" style="position: relative; background-color: #ff0000; color: white; padding: 12px 24px; border: none; border-radius: 12px; cursor: pointer; font-family: 'Poppins', sans-serif; font-size: 0.95rem; font-weight: 500; box-shadow: 0 0 128px 0 rgba(0,0,0,0.1), 0 32px 64px -48px rgba(0,0,0,0.5); transition: transform 0.2s ease, background-color 0.2s ease;">
-        ${window.vionikoaiChat.supportLabel || "Live Support"}
+        ${window.vionikoaiChat?.supportLabel || "Live Support"}
       </button>
       <button id="dismiss-support-button" class="dismiss-support-button" aria-label="Dismiss support button" style="background: #724ae8; border: none; color: white; font-size: 18px; cursor: pointer; position: absolute; top: -10px; right: -10px; width: 24px; height: 24px; border-radius: 12px; text-align: center; line-height: 24px; transition: background-color 0.2s ease; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">&times;</button>
     </div>`;
@@ -156,12 +178,12 @@ const appendChatHTML = () => {
       </button>
       <div class="content chat-content">
         <div id="chat-live-support" style="display: none;">
-          ${window.vionikoaiChat.supportType && liveSupportButton}
+          ${window.vionikoaiChat?.supportType ? liveSupportButton : ""}
         </div>
         <div class="full-chat-block">
           <div class="outer-container">
             <div class="chat-container">
-              <div id="chatbox" class="chatbox">
+              <div id="chatbox" class="chatbox" role="log" aria-live="polite">
                 <h5 id="chat-timestamp" class="chat-timestamp"></h5>
                 <p id="botStarterMessage" class="botText chat-bot-message">
                   <span style="font-family: 'Poppins', sans-serif;">Loading...</span>
@@ -180,8 +202,8 @@ const appendChatHTML = () => {
                 </div>
               </div>
               <div id="chat-bar-bottom"></div>
-              <div class="branding" style="font-family: 'Poppins', sans-serif; font-size: 0.8rem; color: #666; padding: 8px; text-align: center; border-top: 1px solid #eee;">
-                Powered by Vioniko
+              <div class="branding" style="font-family: 'Poppins', sans-serif; font-size: 0.8rem; padding: 8px; text-align: center; border-top: 1px solid #eee;">
+                <a href="https://www.chatvioniko.com" target="_blank" rel="noopener noreferrer" style="color: #666; text-decoration: none;">Powered by Vioniko</a>
               </div>
             </div>
           </div>
@@ -202,23 +224,24 @@ const loadChatScript = () => {
   document.body.appendChild(chatScript);
 };
 
-// Load required scripts
+// Load required scripts. The markdown libraries load in the background and
+// must never block the widget: chat.js falls back to plain text rendering
+// until they are available.
 const loadScripts = () => {
-  const scripts = ["https://cdn.jsdelivr.net/npm/marked/marked.min.js"];
-  Promise.all(
-    scripts.map((src) => {
-      return new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = resolve;
-        document.head.appendChild(script);
-      });
-    })
-  ).then(() => {
-    loadChatScript();
-    initializeForm();
+  // Versions are pinned: an unpinned "latest" can ship breaking API
+  // changes straight into every customer site.
+  const markdownLibs = [
+    "https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js",
+    "https://cdn.jsdelivr.net/npm/dompurify@3.4.8/dist/purify.min.js",
+  ];
+  markdownLibs.forEach((src) => {
+    const script = document.createElement("script");
+    script.src = src;
+    script.async = true;
+    document.head.appendChild(script);
   });
+  loadChatScript();
+  initializeForm();
 };
 
 // Attach Live Support Button
@@ -228,22 +251,31 @@ const attachLiveSupportButton = () => {
     const liveSupportButton = document.getElementById("live-support-button");
     const dismissButton = document.getElementById("dismiss-support-button");
 
-    if (liveSupportButton) {
-      const supportNumber =
-        window.vionikoaiChat.supportContact || "15035833307";
+    // Only wire the live support button when a contact is configured —
+    // there is deliberately no fallback contact.
+    const supportNumber = window.vionikoaiChat?.supportContact;
+    if (liveSupportButton && supportNumber) {
+      const supportType = (
+        window.vionikoaiChat?.supportType || ""
+      ).toLowerCase();
 
       liveSupportButton.addEventListener("click", () => {
-        if (window.vionikoaiChat.supportType === "whatsapp") {
+        if (supportType === "whatsapp") {
           window.open(
             `https://api.whatsapp.com/send?phone=${supportNumber}`,
             "_blank"
           );
-        } else if (window.vionikoaiChat.supportType === "telegram") {
+        } else if (supportType === "telegram") {
           window.open(`https://t.me/${supportNumber}`, "_blank");
         } else {
           window.open(`${supportNumber}`, "_blank");
         }
       });
+    } else if (liveSupportButton) {
+      // Misconfigured (type but no contact): keep the button hidden
+      const container = document.getElementById("chat-live-support");
+      if (container) container.style.display = "none";
+      liveSupportButton.style.display = "none";
     }
 
     // Add event listener for dismiss button
@@ -261,6 +293,7 @@ const attachLiveSupportButton = () => {
 
 // Initialize chat
 const initializeChat = () => {
+  addPreconnects();
   loadStyles();
   appendChatHTML();
   loadScripts();

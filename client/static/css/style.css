@@ -1,5 +1,6 @@
-/* Import Google font - Poppins */
-@import url("https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap");
+/* Poppins is linked directly from the document head (see chatWidgetIframe.js)
+   instead of @import'd here, so the font request isn't serialized behind
+   this stylesheet's download. */
 
 * {
   margin: 0;
@@ -24,7 +25,8 @@
   background: linear-gradient(135deg, #724ae8, #5f3cc6);
   box-shadow: 0 4px 20px rgba(114, 74, 232, 0.4), 0 0 0 0 rgba(114, 74, 232, 0.4);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  animation: float 3s ease-in-out infinite;
+  /* No infinite float animation: it permanently animated `transform`,
+     which overrode the rotate(90deg) open state below. */
 }
 
 .chatbot-toggler:hover {
@@ -32,14 +34,6 @@
   box-shadow: 0 8px 25px rgba(114, 74, 232, 0.5), 0 0 0 10px rgba(114, 74, 232, 0.1);
 }
 
-@keyframes float {
-  0%, 100% {
-    transform: translateY(0px);
-  }
-  50% {
-    transform: translateY(-3px);
-  }
-}
 body.show-chatbot .chatbot-toggler {
   transform: rotate(90deg);
 }
@@ -141,12 +135,33 @@ header h2 {
   display: flex;
   gap: 5px;
   position: absolute;
-  bottom: 0;
+  bottom: 22px; /* leaves room for the branding bar below */
   width: 100%;
   background: #fff;
   padding: 3px 20px;
   border-top: 1px solid #ddd;
   z-index: 1;
+}
+
+/* Branding bar pinned under the input */
+.chatbot .branding {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  font-size: 0.72rem;
+  padding: 3px 0;
+  background: #fff;
+  border-top: 1px solid #f0f0f0;
+  z-index: 2;
+}
+.chatbot .branding a {
+  color: #999;
+  text-decoration: none;
+}
+.chatbot .branding a:hover {
+  color: #724ae8;
 }
 .chat-input textarea {
   height: 55px;
@@ -228,6 +243,12 @@ header h2 {
   animation: typing-dots 1.5s ease-in-out infinite;
 }
 
+/* Staged loader copy: applied by script.js when the response is slow,
+   so a long retrieval doesn't read as a hang */
+.loader.slow::after {
+  content: 'Still working on it…';
+}
+
 @keyframes spin {
   0% {
     transform: rotate(0deg);
@@ -274,6 +295,55 @@ header h2 {
   background: linear-gradient(135deg, #f7fafc, #edf2f7);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
   border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+/* Markdown content inside bot bubbles (.md is set by renderBotText).
+   Nested elements must not pick up the bubble styling that
+   `.chatbox .chat p` would otherwise apply to them. */
+.chatbox .chat p.md {
+  white-space: normal;
+}
+.chatbox .chat p.md p {
+  padding: 0;
+  margin: 0 0 8px;
+  background: none;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  max-width: none;
+  color: inherit;
+  font-size: inherit;
+}
+.chatbox .chat p.md p:last-child {
+  margin-bottom: 0;
+}
+.chatbox .chat p.md ul,
+.chatbox .chat p.md ol {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+.chatbox .chat p.md li {
+  margin: 2px 0;
+}
+.chatbox .chat p.md a {
+  color: #5f3cc6;
+}
+.chatbox .chat p.md code {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 1px 5px;
+  border-radius: 4px;
+  font-size: 0.85em;
+}
+.chatbox .chat p.md pre {
+  background: rgba(0, 0, 0, 0.07);
+  padding: 10px;
+  border-radius: 8px;
+  overflow-x: auto;
+  margin: 6px 0;
+}
+.chatbox .chat p.md pre code {
+  background: none;
+  padding: 0;
 }
 
 /* Loading transition effects */
