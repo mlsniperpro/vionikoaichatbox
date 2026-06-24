@@ -140,7 +140,7 @@ const validateForm = () => {
   if (isValid) {
     window.vionikoaiChat = {
       ...window.vionikoaiChat,
-      chatId: generateRandomId(),
+      chatId: window.vionikoaiChat.chatId || generateRandomId(),
       ...formData,
     };
     document.getElementById("form-overlay").style.display = "none";
@@ -293,6 +293,13 @@ const attachLiveSupportButton = () => {
 
 // Initialize chat
 const initializeChat = () => {
+  // Mint a stable per-session chat id BEFORE anything else, so EVERY embedded
+  // session is captured to the owner's /history — not only sessions where a
+  // lead-capture form is submitted.
+  window.vionikoaiChat = window.vionikoaiChat || {};
+  if (!window.vionikoaiChat.chatId) {
+    window.vionikoaiChat.chatId = generateRandomId();
+  }
   addPreconnects();
   loadStyles();
   appendChatHTML();

@@ -87,7 +87,7 @@ const validateForm = (iframe) => {
   if (isValid) {
     window.parent.vionikoaiChat = {
       ...window.parent.vionikoaiChat,
-      chatId: generateRandomId(),
+      chatId: window.parent.vionikoaiChat.chatId || generateRandomId(),
       ...formData,
     };
     doc.getElementById("form-overlay").style.display = "none";
@@ -349,6 +349,13 @@ function loadIframe() {
 
 // Initialize the widget
 function initWidget() {
+  // Mint a stable per-session chat id on window.parent (the inner script.js
+  // reads window.parent.vionikoaiChat), so EVERY embedded session is captured
+  // to the owner's /history — not only sessions where a form is submitted.
+  window.parent.vionikoaiChat = window.parent.vionikoaiChat || {};
+  if (!window.parent.vionikoaiChat.chatId) {
+    window.parent.vionikoaiChat.chatId = generateRandomId();
+  }
   initCSSWidget();
   loadIframe();
 }
