@@ -8,18 +8,80 @@ const previousMessages = [
 
 // True while a response is streaming; blocks concurrent sends
 let isGenerating = false;
+let activeController = null;
 
-// Render bot text as sanitized markdown when the libraries are available,
-// falling back to plain text otherwise. User text is never rendered as
-// HTML — see appendMessage.
-const renderBotText = (element, text) => {
-  if (window.marked && window.DOMPurify) {
+const getUiCopy = (config) => {
+  const language = String(config.language || "English").toLowerCase();
+  const spanish = language === "es" || language.startsWith("spanish");
+  const defaults = spanish
+    ? {
+        open: "Abrir chat",
+        close: "Cerrar chat",
+        send: "Enviar mensaje",
+        stop: "Detener respuesta",
+        thinking: "Pensando…",
+        slow: "Consultando algunos detalles…",
+        timeout: "La respuesta tardó demasiado. Inténtalo de nuevo.",
+        stopped: "Respuesta detenida. Puedes editar tu mensaje e intentarlo de nuevo.",
+        error: "No pude completar la respuesta. Inténtalo de nuevo.",
+      }
+    : {
+        open: "Open chat",
+        close: "Close chat",
+        send: "Send message",
+        stop: "Stop generating response",
+        thinking: "Thinking…",
+        slow: "Checking a few more details…",
+        timeout: "The response timed out. Please try again.",
+        stopped: "Response stopped. You can edit your message and try again.",
+        error: "I couldn't complete that response. Please try again.",
+      };
+  return {
+    ...defaults,
+    ...(config.uiText && typeof config.uiText === "object"
+      ? config.uiText
+      : {}),
+  };
+};
+
+const uiCopy = getUiCopy(window.vionikoaiChat || {});
+
+// Render bot text as sanitized Markdown when the libraries are available.
+// During streaming, Remend first repairs incomplete Markdown so half-written
+// emphasis, links, and code fences don't make the layout jump. If any optional
+// library is unavailable, streaming safely falls back to plain text.
+const renderBotText = (element, text, { streaming = false } = {}) => {
+  let markdown = text;
+  const canRenderMarkdown =
+    window.marked &&
+    window.DOMPurify &&
+    (!streaming || typeof window.vionikoRemend === "function");
+
+  if (canRenderMarkdown) {
+    if (streaming) {
+      try {
+        markdown = window.vionikoRemend(text, {
+          // Never produce a temporary clickable URL while a link is partial.
+          linkMode: "text-only",
+          inlineKatex: false,
+        });
+      } catch {
+        element.classList.remove("md");
+        element.textContent = text;
+        return;
+      }
+    }
     element.classList.add("md");
     element.innerHTML = window.DOMPurify.sanitize(
-      window.marked.parse(text, { breaks: true }),
+      window.marked.parse(markdown, { breaks: true }),
       // Text-only chat: no images/media (echoed user input must never
-      // produce a network request), no svg/math (sanitizer bypass vectors)
-      { USE_PROFILES: { html: true }, FORBID_TAGS: ["img", "svg", "math", "style"] }
+      // produce a network request), no svg/math (sanitizer bypass vectors),
+      // and no model-controlled inline styling.
+      {
+        USE_PROFILES: { html: true },
+        FORBID_TAGS: ["img", "svg", "math", "style"],
+        FORBID_ATTR: ["style", "srcset"],
+      }
     );
     // Links must not navigate the embedding page
     element.querySelectorAll("a").forEach((a) => {
@@ -27,8 +89,46 @@ const renderBotText = (element, text) => {
       a.rel = "noopener noreferrer";
     });
   } else {
+    element.classList.remove("md");
     element.textContent = text;
   }
+};
+
+// Coalesce fast token bursts into at most one DOM update per animation frame.
+// This keeps long answers responsive while still displaying Markdown live.
+const createStreamingBotRenderer = (element, afterPaint = () => {}) => {
+  let frameId = null;
+  let latestText = "";
+  const requestFrame = window.requestAnimationFrame
+    ? window.requestAnimationFrame.bind(window)
+    : (callback) => setTimeout(callback, 16);
+  const cancelFrame = window.cancelAnimationFrame
+    ? window.cancelAnimationFrame.bind(window)
+    : clearTimeout;
+
+  const paint = () => {
+    frameId = null;
+    renderBotText(element, latestText, { streaming: true });
+    afterPaint();
+  };
+
+  return {
+    update(text) {
+      latestText = text;
+      if (frameId === null) frameId = requestFrame(paint);
+    },
+    finish(text) {
+      if (frameId !== null) cancelFrame(frameId);
+      frameId = null;
+      latestText = text;
+      renderBotText(element, text);
+      afterPaint();
+    },
+    cancel() {
+      if (frameId !== null) cancelFrame(frameId);
+      frameId = null;
+    },
+  };
 };
 
 // Keep the chatbox pinned to the bottom only while the user hasn't
@@ -83,6 +183,113 @@ const getApiError = async (response) => {
     `API responded with HTTP ${response.status}${details ? `: ${details}` : ""}`
   );
 };
+
+const getStreamDelta = (payload) => {
+  if (typeof payload === "string") return payload;
+  if (!payload || typeof payload !== "object") return "";
+  if (payload.type === "error") {
+    throw new Error(payload.errorText || payload.error || "The response stream failed.");
+  }
+  if (payload.type === "text-delta") {
+    return payload.delta || payload.textDelta || "";
+  }
+  if (typeof payload.choices?.[0]?.delta?.content === "string") {
+    return payload.choices[0].delta.content;
+  }
+  if (typeof payload.text === "string") return payload.text;
+  if (typeof payload.content === "string") return payload.content;
+  return "";
+};
+
+// HTTP chunks can split in the middle of a JSON/SSE record. Buffer complete
+// lines before parsing protocol streams, while rendering raw text streams as
+// soon as each chunk arrives.
+async function consumeChatStream(response, onText, onActivity = () => {}) {
+  if (!response.body) {
+    throw new Error("ReadableStream not supported by browser.");
+  }
+
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  const contentType = response.headers.get("content-type") || "";
+  const isProtocolStream =
+    contentType.includes("text/event-stream") ||
+    response.headers.get("x-vercel-ai-data-stream") === "v1" ||
+    response.headers.get("x-vercel-ai-ui-message-stream") === "v1";
+  let accumulated = "";
+  let buffer = "";
+
+  const append = (text) => {
+    if (!text) return;
+    accumulated += text;
+    onText(accumulated);
+  };
+
+  const processLine = (rawLine) => {
+    const line = rawLine.replace(/\r$/, "");
+    if (!line.trim() || line.startsWith(":")) return;
+
+    if (/^[0-9a-f]:/.test(line)) {
+      const prefix = line.slice(0, 2);
+      let payload;
+      try {
+        payload = JSON.parse(line.slice(2));
+      } catch {
+        return;
+      }
+      if (prefix === "3:") {
+        throw new Error(
+          typeof payload === "string" ? payload : "The response stream failed."
+        );
+      }
+      if (prefix === "0:") append(getStreamDelta(payload));
+      return;
+    }
+
+    if (line.startsWith("data:")) {
+      const data = line.slice(5).trimStart();
+      if (!data || data === "[DONE]") return;
+      try {
+        append(getStreamDelta(JSON.parse(data)));
+      } catch (error) {
+        if (error instanceof SyntaxError) return;
+        throw error;
+      }
+      return;
+    }
+
+    try {
+      append(getStreamDelta(JSON.parse(line)));
+    } catch (error) {
+      if (error instanceof SyntaxError) append(`${line}\n`);
+      else throw error;
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    onActivity();
+    const chunk = decoder.decode(value, { stream: true });
+    if (!isProtocolStream) {
+      append(chunk);
+      continue;
+    }
+    buffer += chunk;
+    const lines = buffer.split("\n");
+    buffer = lines.pop() || "";
+    lines.forEach(processLine);
+  }
+
+  const finalChunk = decoder.decode();
+  if (isProtocolStream) {
+    buffer += finalChunk;
+    if (buffer) processLine(buffer);
+  } else {
+    append(finalChunk);
+  }
+  return accumulated;
+}
 
 // Function to append messages to the chatbox. Uses textContent so user
 // input is never injected as HTML (XSS).
@@ -148,19 +355,29 @@ async function streamFromPDFApi(input, signal) {
 
     return response;
   } catch (error) {
-    console.error("Error streaming chat response:", error);
+    if (error.name !== "AbortError") {
+      console.error("Error streaming chat response:", error);
+    }
     throw error;
   }
 }
+
+const setWidgetOpen = (button, opening) => {
+  const widget = button.closest(".chat-bar-collapsible");
+  widget.classList.toggle("is-open", opening);
+  button.classList.toggle("active", opening);
+  button.setAttribute("aria-expanded", String(opening));
+  button.setAttribute("aria-label", opening ? uiCopy.close : uiCopy.open);
+  button.nextElementSibling.setAttribute("aria-hidden", String(!opening));
+};
 
 // Collapsible event listener
 document.addEventListener("click", (e) => {
   for (let t = e.target; t; t = t.parentElement) {
     if (t.classList.contains("collapsible")) {
-      t.classList.toggle("active");
-      const c = t.nextElementSibling;
-      const opening = !c.style.maxHeight;
-      c.style.maxHeight = opening ? `${c.scrollHeight}px` : null;
+      const widget = t.closest(".chat-bar-collapsible");
+      const opening = !widget.classList.contains("is-open");
+      setWidgetOpen(t, opening);
       if (opening) {
         // Let the visitor start typing immediately (unless the lead
         // form still gates the input)
@@ -171,14 +388,48 @@ document.addEventListener("click", (e) => {
     }
   }
 });
+document.addEventListener("keydown", (e) => {
+  const button = document.getElementById("chat-button");
+  if (
+    e.key === "Escape" &&
+    button.getAttribute("aria-expanded") === "true"
+  ) {
+    setWidgetOpen(button, false);
+    button.focus();
+  }
+});
 
 // Text input event listener
-document.getElementById("textInput").addEventListener("keydown", (e) => {
-  if (e.key === "Enter") {
+const messageInput = document.getElementById("textInput");
+const resizeMessageInput = () => {
+  messageInput.style.height = "auto";
+  messageInput.style.height = `${Math.min(messageInput.scrollHeight, 116)}px`;
+};
+messageInput.addEventListener("input", resizeMessageInput);
+messageInput.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && !e.shiftKey) {
     e.preventDefault();
     getResponse();
   }
 });
+document.getElementById("chat-composer").addEventListener("submit", (e) => {
+  e.preventDefault();
+  getResponse();
+});
+
+const setGeneratingState = (generating) => {
+  isGenerating = generating;
+  const input = document.getElementById("textInput");
+  const sendButton = document.getElementById("sendButton");
+  const chatbox = document.getElementById("chatbox");
+  input.disabled = generating;
+  sendButton.dataset.mode = generating ? "stop" : "send";
+  sendButton.setAttribute(
+    "aria-label",
+    generating ? uiCopy.stop : uiCopy.send
+  );
+  chatbox.setAttribute("aria-busy", String(generating));
+};
 
 // Initialize the chatbox with the first bot message
 const firstBotMessage = () => {
@@ -192,7 +443,10 @@ const firstBotMessage = () => {
 
 // Function to get bot response
 const getResponse = async () => {
-  if (isGenerating) return; // one in-flight response at a time
+  if (isGenerating) {
+    activeController?.abort();
+    return;
+  }
   const inputEl = document.getElementById("textInput");
   const userText = inputEl.value.trim();
   if (!userText) return;
@@ -206,6 +460,7 @@ const getResponse = async () => {
 
   appendMessage(userText, "user");
   inputEl.value = "";
+  resizeMessageInput();
   await getBotResponse(userText);
 };
 
@@ -214,100 +469,52 @@ async function getBotResponse(input) {
   const chatbox = document.getElementById("chatbox");
   const botMessage = appendMessage("", "bot");
   const messageSpan = botMessage.querySelector("span");
+  let shouldStickToBottom = true;
+  const streamingRenderer = createStreamingBotRenderer(messageSpan, () => {
+    if (shouldStickToBottom) scrollToBottom(chatbox);
+  });
+  messageSpan.textContent = uiCopy.thinking;
   botMessage.classList.add("loader");
   // After a few seconds, switch the loader copy (see .loader.slow in CSS)
-  const slowTimer = setTimeout(() => botMessage.classList.add("slow"), 6000);
+  const slowTimer = setTimeout(() => {
+    if (botMessage.classList.contains("loader")) {
+      botMessage.classList.add("slow");
+      messageSpan.textContent = uiCopy.slow;
+    }
+  }, 6000);
 
   // Abort if the stream stalls: no data at all for 45 seconds
   const controller = new AbortController();
-  let watchdog = setTimeout(() => controller.abort(), 45000);
+  activeController = controller;
+  let timedOut = false;
+  const abortForTimeout = () => {
+    timedOut = true;
+    controller.abort();
+  };
+  let watchdog = setTimeout(abortForTimeout, 45000);
   const resetWatchdog = () => {
     clearTimeout(watchdog);
-    watchdog = setTimeout(() => controller.abort(), 45000);
+    watchdog = setTimeout(abortForTimeout, 45000);
   };
 
-  isGenerating = true;
+  setGeneratingState(true);
+  let accumulatedContent = "";
   try {
     previousMessages.push({ role: "user", content: input });
 
     const response = await streamFromPDFApi(input, controller.signal);
-    let accumulatedContent = "";
+    accumulatedContent = await consumeChatStream(response, (text) => {
+      botMessage.classList.remove("loader", "slow");
+      shouldStickToBottom = isNearBottom(chatbox);
+      messageSpan.classList.add("streaming");
+      streamingRenderer.update(text);
+    }, resetWatchdog);
 
-    if (!response.body) {
-      throw new Error("ReadableStream not supported by browser.");
+    if (!accumulatedContent.trim()) {
+      throw new Error("The response stream ended without content.");
     }
-
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    botMessage.classList.remove("loader", "slow");
-
-    const renderChunk = () => {
-      const stick = isNearBottom(chatbox);
-      renderBotText(messageSpan, accumulatedContent);
-      if (stick) scrollToBottom(chatbox);
-    };
-
-    // Process chunks as they arrive
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      resetWatchdog();
-
-      const chunk = decoder.decode(value, { stream: true });
-      const lines = chunk.split("\n");
-      for (const line of lines) {
-        if (!line.trim()) continue;
-
-        // Prefixed format (0:, f:, etc.)
-        if (line.match(/^[0fed]:/)) {
-          const prefix = line.substring(0, 2);
-          const content = line.substring(2);
-          try {
-            const parsed = JSON.parse(content);
-            if (prefix === "0:" && typeof parsed === "string") {
-              accumulatedContent += parsed;
-              renderChunk();
-            }
-          } catch (parseError) {
-            // Ignore malformed protocol chunks
-          }
-        }
-        // Standard SSE format
-        else if (line.startsWith("data: ")) {
-          try {
-            if (line.includes("data: [DONE]")) continue;
-            const jsonData = JSON.parse(line.substring(6));
-            // AI SDK format (text-delta)
-            if (jsonData.type === "text-delta" && jsonData.delta) {
-              accumulatedContent += jsonData.delta;
-              renderChunk();
-            }
-            // OpenAI format (legacy support)
-            else if (jsonData.choices && jsonData.choices[0].delta?.content) {
-              accumulatedContent += jsonData.choices[0].delta.content;
-              renderChunk();
-            }
-          } catch (error) {
-            // Ignore unparseable SSE lines
-          }
-        }
-        // Raw text fallback when no specific format is detected
-        else {
-          try {
-            const jsonData = JSON.parse(line);
-            if (jsonData.text || jsonData.content) {
-              accumulatedContent += jsonData.text || jsonData.content;
-              renderChunk();
-            }
-          } catch (e) {
-            if (line.trim()) {
-              accumulatedContent += line;
-              renderChunk();
-            }
-          }
-        }
-      }
-    }
+    messageSpan.classList.remove("streaming");
+    streamingRenderer.finish(accumulatedContent);
 
     // Add the assistant's response to previous messages
     previousMessages.push({
@@ -322,12 +529,23 @@ async function getBotResponse(input) {
     // whenever the visitor closed the page before they fired.
     window.chatCount ? window.chatCount++ : (window.chatCount = 1);
   } catch (error) {
-    console.error("Error in getBotResponse:", error);
+    streamingRenderer.cancel();
+    if (error.name !== "AbortError") {
+      console.error("Error in getBotResponse:", error);
+    }
     botMessage.classList.remove("loader", "slow");
+    botMessage.classList.add("error");
+    messageSpan.classList.remove("streaming", "md");
+    if (error.name === "AbortError" && !timedOut) {
+      document.getElementById("textInput").value = input;
+      resizeMessageInput();
+    }
     messageSpan.textContent =
       error.name === "AbortError"
-        ? "The response took too long. Please try sending your message again."
-        : "An error occurred. Please try again later.";
+        ? timedOut
+          ? uiCopy.timeout
+          : uiCopy.stopped
+        : uiCopy.error;
 
     // If there's an error, we should still add the error message to the history
     previousMessages.push({
@@ -337,7 +555,9 @@ async function getBotResponse(input) {
   } finally {
     clearTimeout(slowTimer);
     clearTimeout(watchdog);
-    isGenerating = false;
+    if (activeController === controller) activeController = null;
+    setGeneratingState(false);
+    document.getElementById("textInput").focus();
   }
 }
 

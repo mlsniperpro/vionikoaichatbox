@@ -17,6 +17,64 @@ const generateRandomId = () => {
   ).join("");
 };
 
+const escapeHtml = (value) =>
+  String(value ?? "").replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        "<": "&lt;",
+        ">": "&gt;",
+        '"': "&quot;",
+        "'": "&#039;",
+      })[character]
+  );
+
+const getLanguageCode = (language) => {
+  const normalized = String(language || "English").toLowerCase();
+  const knownLanguages = {
+    english: "en",
+    spanish: "es",
+    portuguese: "pt",
+    french: "fr",
+    german: "de",
+    italian: "it",
+  };
+  return knownLanguages[normalized] || normalized.slice(0, 2) || "en";
+};
+
+const getUiCopy = (config) => {
+  const language = String(config.language || "English").toLowerCase();
+  const spanish = language === "es" || language.startsWith("spanish");
+  const defaults = spanish
+    ? {
+        open: "Abrir chat",
+        close: "Cerrar chat",
+        status: "En línea · Listo para ayudar",
+        formTitle: "Inicia la conversación",
+        formDescription:
+          "Comparte tus datos para que el equipo pueda darte seguimiento.",
+        continueLabel: "Continuar al chat",
+        send: "Enviar mensaje",
+      }
+    : {
+        open: "Open chat",
+        close: "Close chat",
+        status: "Online · Ready to help",
+        formTitle: "Start the conversation",
+        formDescription:
+          "Share your details so the team can follow up if needed.",
+        continueLabel: "Continue to chat",
+        send: "Send message",
+      };
+  return {
+    ...defaults,
+    ...(config.uiText && typeof config.uiText === "object"
+      ? config.uiText
+      : {}),
+  };
+};
+
 // Generate form fields based on window.vionikoaiChat properties
 const generateFormFields = () => {
   const chatProps = window.parent.vionikoaiChat || {};
@@ -39,9 +97,14 @@ const generateFormFields = () => {
         return "";
       }
 
-      return `<label for="${field}">${label}:</label><input type="${
-        field === "email" ? "email" : "text"
-      }" id="${field}" name="${field}"${isRequired ? " required" : ""}>`;
+      const inputType = field === "email" ? "email" : field === "phone" ? "tel" : "text";
+      return `<div class="form-field"><label for="${field}">${escapeHtml(
+        label
+      )}${isRequired ? '<span aria-hidden="true">*</span>' : ""}</label><input type="${
+        inputType
+      }" id="${field}" name="${field}" autocomplete="${field}"${
+        isRequired ? ' required aria-required="true"' : ""
+      }></div>`;
     })
     .join("");
 };
@@ -91,8 +154,9 @@ const validateForm = (iframe) => {
       ...formData,
     };
     doc.getElementById("form-overlay").style.display = "none";
+    doc.getElementById("user-form").dataset.completed = "true";
     const chatbot = doc.querySelector(".chatbot");
-    chatbot.style.display = "block";
+    chatbot.style.display = "flex";
     // Let the visitor start typing immediately
     doc.querySelector(".chat-input textarea")?.focus();
   }
@@ -118,12 +182,18 @@ function loadIframe() {
   );
 
   const formFields = generateFormFields();
+  const config = window.parent.vionikoaiChat || {};
+  const uiCopy = getUiCopy(config);
+  const chatName = config.chatName || "Vioniko AI";
+  const statusText = config.statusText || uiCopy.status;
+  const firstMessage = config.firstMessage || "Hi! How can I help today?";
+  const inputPlaceholder = config.inputPlaceholder || "Write a message...";
   const liveSupportButtonHTML = `
     <div id="live-support-container" class="live-support-container">
-      <button id="live-support-button" class="live-support-button">
-        ${window?.parent?.vionikoaiChat?.supportLabel || "Live Support"}
+      <button id="live-support-button" class="live-support-button" type="button">
+        <span aria-hidden="true">↗</span>${escapeHtml(config.supportLabel || "Contact live support")}
       </button>
-      <button id="dismiss-live-support" class="dismiss-live-support">&times;</button>
+      <button id="dismiss-live-support" class="dismiss-live-support" type="button" aria-label="Dismiss live support">&times;</button>
     </div>
   `;
   // Check if supportType exists and is not null before including it in the HTML
@@ -132,10 +202,10 @@ function loadIframe() {
     window.parent.vionikoaiChat.supportType !== "null";
 
   const srcDocContent = `
-  <html lang="en" dir="ltr">
+  <html lang="${getLanguageCode(config.language)}" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>${window.parent.vionikoaiChat?.chatName || "Vioniko Chat"}</title>
+    <title>${escapeHtml(chatName)}</title>
     <!-- Warm up the chat API origin so the first message skips DNS+TLS -->
     <link rel="preconnect" href="https://www.chatvioniko.com" crossorigin>
     <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
@@ -145,122 +215,53 @@ function loadIframe() {
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&display=swap">
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/style.css">
     <link rel="stylesheet" href="https://mlsniperpro.github.io/vionikoaichatbox/client/static/css/form.css">
-    <style>
-      /* Font is imported via style.css */
-
-      .live-support-container {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        display: none;
-        z-index: 1000;
-        font-family: "Poppins", sans-serif;
-      }
-
-      #live-support-button {
-        background-color: #ff0000;
-        color: white;
-        padding: 12px 24px;
-        font-size: 0.95rem;
-        border: none;
-        border-radius: 12px;
-        cursor: pointer;
-        font-weight: 500;
-        box-shadow: 0 0 128px 0 rgba(0,0,0,0.1),
-                    0 32px 64px -48px rgba(0,0,0,0.5);
-        transition: transform 0.2s ease, background-color 0.2s ease;
-      }
-
-      #live-support-button:hover {
-        background-color: #cc0000;
-        transform: translateY(-2px);
-      }
-
-      .dismiss-live-support {
-        background: #724ae8;
-        border: none;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-        position: absolute;
-        top: -10px;
-        right: -10px;
-        width: 24px;
-        height: 24px;
-        border-radius: 12px;
-        text-align: center;
-        line-height: 24px;
-        transition: background-color 0.2s ease;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-      }
-
-      .dismiss-live-support:hover {
-        background-color: #5f3cc6;
-      }
-
-      /* Ensure Material Icons load properly */
-      .material-symbols-outlined,
-      .material-symbols-rounded {
-        font-family: 'Material Symbols Outlined', 'Material Symbols Rounded';
-        font-weight: normal;
-        font-style: normal;
-        font-size: 24px;
-        line-height: 1;
-        letter-spacing: normal;
-        text-transform: none;
-        display: inline-block;
-        white-space: nowrap;
-        word-wrap: normal;
-        direction: ltr;
-        -webkit-font-smoothing: antialiased;
-        text-rendering: optimizeLegibility;
-        -moz-osx-font-smoothing: grayscale;
-      }
-    </style>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@48,400,0,0" />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@48,400,1,0" />
     <!-- Markdown libs load async and never block the chat; script.js falls
          back to plain text rendering until they are available -->
-    <script src="https://cdn.jsdelivr.net/npm/marked@15.0.12/marked.min.js" async></script>
-    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.8/dist/purify.min.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@18.0.9/lib/marked.umd.js" async></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.4.13/dist/purify.min.js" async></script>
+    <script type="module" src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/remend-loader.js"></script>
     <script src="https://mlsniperpro.github.io/vionikoaichatbox/client/static/scripts/script.js" defer></script>
   </head>
   <body>
-  <button class="chatbot-toggler" aria-label="Open chat">
-      <span class="material-symbols-rounded" aria-hidden="true">mode_comment</span>
-      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+  <button class="chatbot-toggler" type="button" aria-label="${escapeHtml(uiCopy.open)}" aria-expanded="false">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 18.5 4 21l.7-3.7A8.1 8.1 0 0 1 3 12.4C3 7.8 7 4 12 4s9 3.8 9 8.4-4 8.4-9 8.4c-2 0-3.9-.6-5.5-1.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg>
     </button>
     <div class="chatbot-container">
       ${shouldShowSupportButton ? liveSupportButtonHTML : ""}
       <div class="chatbot">
         <header>
-          <h2>${window.parent.vionikoaiChat?.chatName || "VionikoAI Chat"}</h2>
-          <span class="close-btn material-symbols-outlined" role="button" tabindex="0" aria-label="Close chat" style="cursor: pointer; transition: opacity 0.2s ease;">close</span>
+          <span class="chat-brand-mark" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M6.5 18.5 4 21l.7-3.7A8.1 8.1 0 0 1 3 12.4C3 7.8 7 4 12 4s9 3.8 9 8.4-4 8.4-9 8.4c-2 0-3.9-.6-5.5-1.5Z"/><path d="M8 12h.01M12 12h.01M16 12h.01"/></svg></span>
+          <div class="chat-header-copy"><h2>${escapeHtml(chatName)}</h2><p><i aria-hidden="true"></i>${escapeHtml(statusText)}</p></div>
+          <button class="close-btn" type="button" aria-label="${escapeHtml(uiCopy.close)}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg></button>
         </header>
-        <ul class="chatbox" role="log" aria-live="polite">
-          <!-- Chat messages will be appended here -->
+        <ul class="chatbox" role="log" aria-live="polite" aria-relevant="additions text" aria-busy="false">
+          <li class="chat incoming welcome-message"><p>${escapeHtml(firstMessage)}</p></li>
         </ul>
-        <div class="chat-input">
+        <form class="chat-input">
+          <label class="sr-only" for="chat-message">Message</label>
           <textarea
-            placeholder="${
-              window.parent.vionikoaiChat?.inputPlaceholder ||
-              "Type a message..."
-            }"
-            spellcheck="false"
+            id="chat-message"
+            rows="1"
+            placeholder="${escapeHtml(inputPlaceholder)}"
+            spellcheck="true"
+            maxlength="4000"
             required
-            style="font-family: 'Poppins', sans-serif; font-size: 0.95rem;"
           ></textarea>
-          <span id="send-btn" class="material-symbols-rounded" role="button" tabindex="0" aria-label="Send message" style="color: #724ae8; transition: transform 0.2s ease;">send</span>
-        </div>
+          <button id="send-btn" type="submit" aria-label="${escapeHtml(uiCopy.send)}" data-mode="send"><svg class="send-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="m4 4 17 8-17 8 3-8-3-8Z"/><path d="M7 12h14"/></svg><span class="stop-icon" aria-hidden="true"></span></button>
+        </form>
         <div class="branding">
-          <a href="https://www.chatvioniko.com" target="_blank" rel="noopener noreferrer">Powered by Vioniko</a>
+          <a href="https://www.chatvioniko.com" target="_blank" rel="noopener noreferrer">Powered by <strong>Vioniko</strong></a>
         </div>
       </div>
-      <div id="form-overlay" class="form-overlay" style="display:none; z-index: 9999999999;">
-        <form id="user-form">${formFields}<input type="submit" value="${
-    window.parent.vionikoaiChat?.submit || "Submit"
-  }"></form>
+      <div id="form-overlay" class="form-overlay" style="display:none;">
+        <form id="user-form" aria-labelledby="form-title"><button class="form-close" type="button" aria-label="${escapeHtml(uiCopy.close)}">&times;</button><div class="form-intro"><span class="form-icon" aria-hidden="true">✦</span><div><h2 id="form-title">${escapeHtml(
+          config.formTitle || uiCopy.formTitle
+        )}</h2><p>${escapeHtml(
+          config.formDescription || uiCopy.formDescription
+        )}</p></div></div>${formFields}<button type="submit">${escapeHtml(
+          config.submit || uiCopy.continueLabel
+        )}<span aria-hidden="true">→</span></button></form>
       </div>
     </div>
   </body>
@@ -271,6 +272,7 @@ function loadIframe() {
   iframe.srcdoc = srcDocContent;
   iframe.style.width = "100%";
   iframe.style.height = "100%";
+  iframe.style.border = "0";
 
   // Attach form submit event and live support button event
   iframe.onload = () => {
@@ -281,6 +283,7 @@ function loadIframe() {
     const chatbot = doc.querySelector(".chatbot");
     const liveSupportButton = doc.getElementById("live-support-button");
     const dismissButton = doc.getElementById("dismiss-live-support");
+    const formCloseButton = doc.querySelector(".form-close");
     // No fallback contact: if none is configured, the button stays inert/hidden
     const supportNumber = window.parent.vionikoaiChat?.supportContact;
     const supportType = (
@@ -296,24 +299,41 @@ function loadIframe() {
 
     if (chatbotToggler) {
       chatbotToggler.addEventListener("click", () => {
-        // Check if form has any input fields (excluding submit button)
-        const hasFormFields = formOverlay.querySelector('input:not([type="submit"])');
+        const opening = iDiv.classList.contains("closed");
+        iDiv.classList.toggle("closed", !opening);
+        doc.body.classList.toggle("show-chatbot", opening);
+        chatbotToggler.setAttribute("aria-expanded", String(opening));
+        chatbotToggler.setAttribute(
+          "aria-label",
+          opening ? uiCopy.close : uiCopy.open
+        );
 
-        if (formOverlay.style.display === "block") {
+        if (!opening) {
           formOverlay.style.display = "none";
-          chatbot.style.display = "none";
-        } else {
-          // Only show form if it has fields, otherwise show chat directly
-          if (hasFormFields) {
-            formOverlay.style.display = "block";
-            chatbot.style.display = "none";
-            // Focus the first form field so the visitor can type right away
-            formOverlay.querySelector('input:not([type="submit"])')?.focus();
-          } else {
-            chatbot.style.display = "block";
-            doc.querySelector(".chat-input textarea")?.focus();
-          }
+          return;
         }
+
+        const hasFormFields = formOverlay.querySelector('input:not([type="submit"])');
+        const needsLeadForm = hasFormFields && form?.dataset.completed !== "true";
+        if (needsLeadForm) {
+          formOverlay.style.display = "flex";
+          chatbot.style.display = "none";
+          formOverlay.querySelector('input:not([type="submit"])')?.focus();
+        } else {
+          formOverlay.style.display = "none";
+          chatbot.style.display = "flex";
+          doc.querySelector(".chat-input textarea")?.focus();
+        }
+      });
+    }
+
+    if (formCloseButton) {
+      formCloseButton.addEventListener("click", () => {
+        formOverlay.style.display = "none";
+        doc.body.classList.remove("show-chatbot");
+        iDiv.classList.add("closed");
+        chatbotToggler.setAttribute("aria-expanded", "false");
+        chatbotToggler.setAttribute("aria-label", uiCopy.open);
       });
     }
 

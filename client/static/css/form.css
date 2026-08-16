@@ -1,89 +1,166 @@
-/* Poppins is linked directly from the document head (see the widget
-   loaders) instead of @import'd here, so the font request isn't
-   serialized behind this stylesheet's download. */
-
-/* Style for the form overlay */
 .form-overlay {
-  position: relative; /* I change from absolute to relative when I had Iframe issues */
-  top: 30px;
-  left: 0;
-  width: 100%;
-  bottom: 30px;
-  height: 100%;
+  position: absolute;
+  inset: 0;
+  z-index: 10;
   display: flex;
-  justify-content: center;
   align-items: center;
-  z-index: 1000000; /* Slightly above chat widget */
+  justify-content: center;
+  padding: 20px;
+  overflow-y: auto;
+  background: #f6f7fb;
+  font-family: "Poppins", ui-sans-serif, system-ui, sans-serif;
 }
 
-/* Style for the form */
 #user-form {
-  background-color: #fff;
-  padding: 25px;
-  border-radius: 18px;
-  width: 80%;
-  max-width: 400px;
-  text-align: center;
-  font-family: "Poppins", sans-serif;
-  box-shadow: 0 0 128px 0 rgba(0, 0, 0, 0.1),
-    0 32px 64px -48px rgba(0, 0, 0, 0.5);
-}
-
-/* Style for the labels */
-#user-form label {
-  display: block;
-  margin-bottom: 10px;
-  font-weight: 500;
-  color: #333;
-}
-
-/* Style for the input fields */
-#user-form input {
+  position: relative;
   width: 100%;
-  padding: 12px;
-  margin-bottom: 20px;
-  border: none;
-  border-radius: 12px;
-  background-color: #f2f2f2;
-  font-family: "Poppins", sans-serif;
-  font-size: 0.95rem;
-  transition: all 0.2s ease;
+  max-width: 350px;
+  padding: 22px;
+  color: #191b2a;
+  background: #fff;
+  border: 1px solid #e7e8ef;
+  border-radius: 20px;
+  box-shadow: 0 16px 42px rgba(30, 33, 59, 0.1);
 }
 
-#user-form input:focus {
-  outline: none;
-  background-color: #fff;
-  box-shadow: 0 0 0 2px rgba(114, 74, 232, 0.2);
-}
-
-/* Style for the submit button */
-#user-form input[type="submit"] {
-  background-color: #724ae8;
-  color: white;
-  border: none;
+.form-close {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  padding: 0;
+  color: #737689;
+  background: #f3f3f7;
+  border: 0;
+  border-radius: 9px;
+  font-size: 19px;
+  line-height: 1;
   cursor: pointer;
-  padding: 12px 24px;
+}
+
+.form-close:hover {
+  color: #4036a8;
+  background: #eeecff;
+}
+
+.form-intro {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.form-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  color: #5b50d6;
+  background: #eeecff;
   border-radius: 12px;
+  font-size: 16px;
+}
+
+.form-intro h2,
+.form-intro p {
+  margin: 0;
+}
+
+.form-intro h2 {
+  color: #191b2a;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.form-intro p {
+  margin-top: 4px;
+  color: #737689;
+  font-size: 0.73rem;
+  line-height: 1.5;
+}
+
+.form-field {
+  margin-bottom: 14px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 6px;
+  color: #414456;
+  font-size: 0.76rem;
   font-weight: 500;
-  transition: background-color 0.2s ease;
+  text-align: left;
 }
 
-#user-form input[type="submit"]:hover {
-  background-color: #5f3cc6;
+.form-field label span {
+  margin-left: 3px;
+  color: #a33b4b;
 }
 
-/* Media query for responsiveness - matches iframe.css breakpoint */
-@media (max-width: 490px) {
+.form-field input {
+  width: 100%;
+  height: 43px;
+  padding: 0 12px;
+  color: #191b2a;
+  background: #f8f8fb;
+  border: 1px solid #dedfe8;
+  border-radius: 12px;
+  outline: none;
+  font: inherit;
+  font-size: 0.86rem;
+  transition: border-color 160ms ease, box-shadow 160ms ease,
+    background 160ms ease;
+}
+
+.form-field input:focus {
+  background: #fff;
+  border-color: #5b50d6;
+  box-shadow: 0 0 0 3px rgba(91, 80, 214, 0.12);
+}
+
+#user-form > button[type="submit"] {
+  display: flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  margin-top: 6px;
+  padding: 10px 14px;
+  color: #fff;
+  background: #5b50d6;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 160ms ease, transform 160ms ease,
+    box-shadow 160ms ease;
+}
+
+#user-form > button[type="submit"]:hover {
+  background: #4036a8;
+  box-shadow: 0 8px 18px rgba(91, 80, 214, 0.2);
+  transform: translateY(-1px);
+}
+
+@media (max-width: 520px) {
+  .form-overlay {
+    padding: 16px;
+  }
+
   #user-form {
-    width: 95%;
+    max-width: 390px;
     padding: 20px;
   }
-  #user-form input,
-  #user-form label {
-    font-size: 16px; /* Prevents iOS zoom on focus */
-  }
-  #user-form input[type="submit"] {
-    width: 100%;
-    padding: 16px 24px;
+
+  .form-field input {
+    font-size: 16px;
   }
 }
