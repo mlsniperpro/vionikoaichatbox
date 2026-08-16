@@ -39,6 +39,51 @@ const scrollToBottom = (el) => {
   el.scrollTop = el.scrollHeight;
 };
 
+// Only forward temperatures accepted by the model API. Embed snippets often
+// provide form values as strings, so normalize a valid value to a number.
+const getConfiguredTemperature = (config) => {
+  const configuredValue = config?.temperature;
+  if (
+    configuredValue === null ||
+    (typeof configuredValue === "string" && configuredValue.trim() === "") ||
+    typeof configuredValue === "boolean"
+  ) {
+    return undefined;
+  }
+  const temperature = Number(configuredValue);
+  return Number.isFinite(temperature) && temperature >= 0 && temperature <= 2
+    ? temperature
+    : undefined;
+};
+
+// Preserve structured API failures (for example ACCESS_DENIED) in the
+// console instead of reducing every non-2xx response to its HTTP status.
+const getApiError = async (response) => {
+  let body;
+  try {
+    body = await response.clone().json();
+  } catch {
+    try {
+      body = (await response.text()).trim();
+    } catch {
+      body = "";
+    }
+  }
+
+  const details =
+    typeof body === "string"
+      ? body
+      : [body?.error, body?.details, body?.message]
+          .filter((value, index, values) =>
+            value && values.indexOf(value) === index
+          )
+          .join(": ");
+
+  return new Error(
+    `API responded with HTTP ${response.status}${details ? `: ${details}` : ""}`
+  );
+};
+
 // Function to append messages to the chatbox. Uses textContent so user
 // input is never injected as HTML (XSS).
 const appendMessage = (message, type) => {
@@ -70,6 +115,7 @@ async function streamFromPDFApi(input, signal) {
       systemPrompt: window.vionikoaiChat?.systemPrompt || "",
       conversationId: window.vionikoaiChat?.conversationId,
       userId: window.vionikoaiChat?.userId,
+      embedToken: window.vionikoaiChat?.embedToken,
       data: {
         fileName: window.vionikoaiChat?.fileName,
         chatId: window.vionikoaiChat?.chatId,
@@ -80,7 +126,8 @@ async function streamFromPDFApi(input, signal) {
       name: window.vionikoaiChat?.name,
       email: window.vionikoaiChat?.email,
       phone: window.vionikoaiChat?.phone,
-      language: "English",
+      temperature: getConfiguredTemperature(window.vionikoaiChat),
+      language: window.vionikoaiChat?.language || "English",
       origin: "embedded",
     };
     const response = await fetch("https://www.chatvioniko.com/api/pdf", {
@@ -96,7 +143,7 @@ async function streamFromPDFApi(input, signal) {
     });
 
     if (!response.ok) {
-      throw new Error(`API responded with HTTP ${response.status}`);
+      throw await getApiError(response);
     }
 
     return response;

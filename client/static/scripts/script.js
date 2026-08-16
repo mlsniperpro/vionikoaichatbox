@@ -31,6 +31,51 @@ const scrollToBottom = (el) => {
   el.scrollTop = el.scrollHeight;
 };
 
+// Only forward temperatures accepted by the model API. Embed snippets often
+// provide form values as strings, so normalize a valid value to a number.
+const getConfiguredTemperature = (config) => {
+  const configuredValue = config?.temperature;
+  if (
+    configuredValue === null ||
+    (typeof configuredValue === "string" && configuredValue.trim() === "") ||
+    typeof configuredValue === "boolean"
+  ) {
+    return undefined;
+  }
+  const temperature = Number(configuredValue);
+  return Number.isFinite(temperature) && temperature >= 0 && temperature <= 2
+    ? temperature
+    : undefined;
+};
+
+// Preserve structured API failures (for example ACCESS_DENIED) in the
+// console instead of reducing every non-2xx response to its HTTP status.
+const getApiError = async (response) => {
+  let body;
+  try {
+    body = await response.clone().json();
+  } catch {
+    try {
+      body = (await response.text()).trim();
+    } catch {
+      body = "";
+    }
+  }
+
+  const details =
+    typeof body === "string"
+      ? body
+      : [body?.error, body?.details, body?.message]
+          .filter((value, index, values) =>
+            value && values.indexOf(value) === index
+          )
+          .join(": ");
+
+  return new Error(
+    `API responded with HTTP ${response.status}${details ? `: ${details}` : ""}`
+  );
+};
+
 // Stream chat responses through the secure proxy API
 async function streamFromProxyApi(userMessage, signal) {
   try {
@@ -48,6 +93,7 @@ async function streamFromProxyApi(userMessage, signal) {
         systemPrompt: window.parent.vionikoaiChat?.systemPrompt || "",
         conversationId: window.parent.vionikoaiChat?.conversationId,
         userId: window.parent.vionikoaiChat?.userId,
+        embedToken: window.parent.vionikoaiChat?.embedToken,
         data: {
           fileName: window.parent.vionikoaiChat?.fileName,
           chatId: window.parent.vionikoaiChat?.chatId,
@@ -58,13 +104,14 @@ async function streamFromProxyApi(userMessage, signal) {
         name: window.parent.vionikoaiChat?.name,
         email: window.parent.vionikoaiChat?.email,
         phone: window.parent.vionikoaiChat?.phone,
-        language: "English",
+        temperature: getConfiguredTemperature(window.parent.vionikoaiChat),
+        language: window.parent.vionikoaiChat?.language || "English",
         origin: "embedded",
       }),
     });
 
     if (!response.ok) {
-      throw new Error(`API responded with HTTP ${response.status}`);
+      throw await getApiError(response);
     }
 
     return response; // Return the full response

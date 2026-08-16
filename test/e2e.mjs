@@ -2,8 +2,8 @@
 //
 // Serves the test pages from localhost; intercepts the GitHub Pages URLs and
 // fulfills them from the local working tree, so the LOCAL edits are what
-// runs. The /api/pdf calls go to the real production server (each run sends
-// ~4 real messages, metered to the demo widget's owner account).
+// runs. /api/pdf is mocked so tests are deterministic and never consume a
+// customer's token or metered usage.
 //
 // Run from the repo root (playwright is not committed — install ad hoc):
 //   npm i --no-save playwright && npx playwright install chromium
@@ -18,6 +18,7 @@ import path from "path";
 const REPO = path.resolve(new URL(".", import.meta.url).pathname, "..");
 const GH_PREFIX = "https://mlsniperpro.github.io/vionikoaichatbox/";
 const BASE = "http://localhost:8787";
+const TEST_EMBED_TOKEN = "e2e-signed-embed-token";
 
 let pass = 0,
   fail = 0;
@@ -37,11 +38,41 @@ const MIME = {
   ".html": "text/html",
 };
 
-async function newPage(browser, errors) {
+async function newPage(browser, errors, apiRequests) {
   const page = await browser.newPage({ viewport: { width: 1280, height: 800 } });
   page.on("pageerror", (err) => errors.push(`pageerror: ${err.message}`));
   page.on("console", (msg) => {
     if (msg.type() === "error") errors.push(`console.error: ${msg.text()}`);
+  });
+  await page.route("https://www.chatvioniko.com/api/pdf", async (route) => {
+    const request = route.request();
+    const corsHeaders = {
+      "access-control-allow-origin": "*",
+      "access-control-allow-methods": "POST, OPTIONS",
+      "access-control-allow-headers": "Content-Type, Accept",
+    };
+
+    if (request.method() === "OPTIONS") {
+      return route.fulfill({ status: 204, headers: corsHeaders });
+    }
+
+    const payload = request.postDataJSON();
+    apiRequests.push(payload);
+    const userMessage = payload.messages?.at(-1)?.content || "";
+    const reply = userMessage.includes("lista markdown")
+      ? "- Primera capacidad\n- Segunda capacidad\n- Tercera capacidad"
+      : "Respuesta de prueba segura.";
+
+    // Keep the response in flight briefly so loader and concurrent-send
+    // behavior are exercised instead of racing an instantaneous mock.
+    await new Promise((resolve) => setTimeout(resolve, 700));
+
+    return route.fulfill({
+      status: 200,
+      contentType: "text/event-stream",
+      headers: corsHeaders,
+      body: `0:${JSON.stringify(reply)}\n`,
+    });
   });
   await page.route(`${GH_PREFIX}**`, (route) => {
     const url = new URL(route.request().url());
@@ -58,6 +89,22 @@ async function newPage(browser, errors) {
     }
   });
   return page;
+}
+
+function checkApiConfiguration(variant, apiRequests) {
+  const payload = apiRequests[0] || {};
+  check(
+    `${variant}: embed token forwarded`,
+    payload.embedToken === TEST_EMBED_TOKEN
+  );
+  check(`${variant}: temperature normalized`, payload.temperature === 0.6);
+  check(`${variant}: language forwarded`, payload.language === "Spanish");
+  check(`${variant}: embedded origin forwarded`, payload.origin === "embedded");
+  check(
+    `${variant}: conversation forwarded`,
+    payload.conversationId === "213a17aa-7f03-4646-b689-8fcad9ab8b84"
+  );
+  check(`${variant}: stable chat id forwarded`, !!payload.data?.chatId);
 }
 
 // Wait until the latest bot message has settled (text stable for 3s, no loader)
@@ -95,7 +142,8 @@ const MD_PROMPT =
 async function testDirect(browser) {
   console.log("\n=== DIRECT VARIANT (chatWidget.js) ===");
   const errors = [];
-  const page = await newPage(browser, errors);
+  const apiRequests = [];
+  const page = await newPage(browser, errors, apiRequests);
   await page.goto(`${BASE}/direct.html`);
 
   // Widget boots
@@ -205,6 +253,7 @@ async function testDirect(browser) {
     "no <img> anywhere in chat after bot reply (echoed payload sanitized)",
     (await page.locator("#chatbox img").count()) === 0
   );
+  checkApiConfiguration("direct", apiRequests);
 
   // Markdown reply + concurrent-send guard
   await page.fill("#textInput", MD_PROMPT);
@@ -269,7 +318,8 @@ async function testDirect(browser) {
 async function testIframe(browser) {
   console.log("\n=== IFRAME VARIANT (chatWidgetIframe.js) ===");
   const errors = [];
-  const page = await newPage(browser, errors);
+  const apiRequests = [];
+  const page = await newPage(browser, errors, apiRequests);
   await page.goto(`${BASE}/iframe.html`);
 
   await page.waitForSelector("#vionikodiv iframe", { timeout: 15000 });
@@ -376,6 +426,7 @@ async function testIframe(browser) {
     "no <img> anywhere in chat after bot reply (echoed payload sanitized)",
     (await frame.locator(".chatbox img").count()) === 0
   );
+  checkApiConfiguration("iframe", apiRequests);
 
   // Markdown + concurrent guard
   await frame.fill(".chat-input textarea", MD_PROMPT);
