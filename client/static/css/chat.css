@@ -8,6 +8,8 @@
   --vio-surface: #ffffff;
   --vio-canvas: #f6f7fb;
   --vio-danger: #a33b4b;
+  --vio-chat-text-size: 1rem;
+  --vio-chat-meta-size: 0.78rem;
 }
 
 .chat-bar-collapsible,
@@ -110,7 +112,7 @@
 .chat-header-copy strong {
   max-width: 240px;
   overflow: hidden;
-  font-size: 0.98rem;
+  font-size: 1.05rem;
   font-weight: 600;
   line-height: 1.35;
   text-overflow: ellipsis;
@@ -122,7 +124,7 @@
   align-items: center;
   margin-top: 3px;
   color: rgba(255, 255, 255, 0.78);
-  font-size: 0.72rem;
+  font-size: var(--vio-chat-meta-size);
   font-weight: 400;
 }
 
@@ -221,7 +223,7 @@
 .chat-timestamp {
   margin: 0 auto 2px;
   color: var(--vio-muted);
-  font-size: 0.68rem;
+  font-size: var(--vio-chat-meta-size);
   font-weight: 500;
 }
 
@@ -230,8 +232,8 @@
   display: flex;
   clear: both;
   margin: 0;
-  font-size: 0.9rem;
-  line-height: 1.55;
+  font-size: var(--vio-chat-text-size);
+  line-height: 1.6;
   animation: message-in 180ms ease-out;
 }
 
@@ -334,8 +336,8 @@
   outline: none;
   resize: none;
   font: inherit;
-  font-size: 0.88rem;
-  line-height: 1.45;
+  font-size: var(--vio-chat-text-size);
+  line-height: 1.5;
   transition: border-color 160ms ease, box-shadow 160ms ease,
     background 160ms ease;
 }
@@ -418,7 +420,7 @@
 
 .branding a {
   color: #9799a7;
-  font-size: 0.67rem;
+  font-size: 0.75rem;
   text-decoration: none;
 }
 
@@ -456,7 +458,7 @@
   background: transparent;
   border: 0;
   font: inherit;
-  font-size: 0.78rem;
+  font-size: 0.88rem;
   font-weight: 600;
   cursor: pointer;
 }
@@ -503,7 +505,7 @@
   padding: 1px 5px;
   background: rgba(25, 27, 42, 0.07);
   border-radius: 5px;
-  font-size: 0.86em;
+  font-size: 0.9em;
 }
 
 .botText span.md pre {

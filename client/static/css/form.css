@@ -72,7 +72,7 @@
 
 .form-intro h2 {
   color: #191b2a;
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 600;
   line-height: 1.4;
 }
@@ -80,7 +80,7 @@
 .form-intro p {
   margin-top: 4px;
   color: #737689;
-  font-size: 0.73rem;
+  font-size: 0.86rem;
   line-height: 1.5;
 }
 
@@ -92,7 +92,7 @@
   display: block;
   margin-bottom: 6px;
   color: #414456;
-  font-size: 0.76rem;
+  font-size: 0.86rem;
   font-weight: 500;
   text-align: left;
 }
@@ -112,7 +112,7 @@
   border-radius: 12px;
   outline: none;
   font: inherit;
-  font-size: 0.86rem;
+  font-size: 1rem;
   transition: border-color 160ms ease, box-shadow 160ms ease,
     background 160ms ease;
 }
@@ -137,7 +137,7 @@
   border: 0;
   border-radius: 12px;
   font: inherit;
-  font-size: 0.84rem;
+  font-size: 0.95rem;
   font-weight: 600;
   cursor: pointer;
   transition: background 160ms ease, transform 160ms ease,
