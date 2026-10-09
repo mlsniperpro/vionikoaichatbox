@@ -17,6 +17,51 @@ const generateRandomId = () => {
   ).join("");
 };
 
+// Host pages served as ISO-8859-1/windows-1252 decode a pasted UTF-8 snippet
+// byte by byte, so "según" arrives as "segÃºn". That breaks visible labels
+// and, worse, the systemPrompt no longer matches the embed token's
+// systemPromptSha256, so the API rejects every message. Re-encode each
+// string to its windows-1252 bytes and decode those as UTF-8; text that was
+// genuinely written in windows-1252 is not valid UTF-8 and is left alone.
+const CP1252_HIGH_BYTES =
+  "\u20ac\u0081\u201a\u0192\u201e\u2026\u2020\u2021" +
+  "\u02c6\u2030\u0160\u2039\u0152\u008d\u017d\u008f" +
+  "\u0090\u2018\u2019\u201c\u201d\u2022\u2013\u2014" +
+  "\u02dc\u2122\u0161\u203a\u0153\u009d\u017e\u0178";
+
+const repairMojibake = (value) => {
+  if (typeof value !== "string" || !/[^\x00-\x7f]/.test(value)) return value;
+  const bytes = new Uint8Array(value.length);
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    const highByte = CP1252_HIGH_BYTES.indexOf(value[i]);
+    if (code < 0x80 || (code >= 0xa0 && code <= 0xff)) bytes[i] = code;
+    else if (highByte !== -1) bytes[i] = 0x80 + highByte;
+    else return value; // not a windows-1252 character, so not mojibake
+  }
+  try {
+    return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+  } catch {
+    return value;
+  }
+};
+
+const repairConfigEncoding = (value) => {
+  if (Array.isArray(value)) return value.map(repairConfigEncoding);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => [
+        key,
+        repairConfigEncoding(entry),
+      ])
+    );
+  }
+  return repairMojibake(value);
+};
+
+const isWindows1252Page = () =>
+  String(document.characterSet || "").toLowerCase() === "windows-1252";
+
 const escapeHtml = (value) =>
   String(value ?? "").replace(
     /[&<>"']/g,
@@ -373,6 +418,11 @@ function initWidget() {
   // reads window.parent.vionikoaiChat), so EVERY embedded session is captured
   // to the owner's /history — not only sessions where a form is submitted.
   window.parent.vionikoaiChat = window.parent.vionikoaiChat || {};
+  if (isWindows1252Page()) {
+    window.parent.vionikoaiChat = repairConfigEncoding(
+      window.parent.vionikoaiChat
+    );
+  }
   if (!window.parent.vionikoaiChat.chatId) {
     window.parent.vionikoaiChat.chatId = generateRandomId();
   }
